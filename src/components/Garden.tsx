@@ -9,25 +9,16 @@ interface GardenProps {
 function PlantSVG({ stage }: { stage: PlantStage }) {
   return (
     <div className="flex flex-col items-center justify-end h-48 relative">
-      {/* Flower */}
       {stage === "flower" && (
         <div className="animate-bloom mb-[-4px]">
           <svg width="60" height="60" viewBox="0 0 60 60">
             {[0, 60, 120, 180, 240, 300].map((angle) => (
-              <ellipse
-                key={angle}
-                cx="30" cy="30" rx="12" ry="20"
-                fill="hsl(330, 60%, 65%)"
-                transform={`rotate(${angle}, 30, 30)`}
-                opacity="0.85"
-              />
+              <ellipse key={angle} cx="30" cy="30" rx="12" ry="20" fill="hsl(330, 60%, 65%)" transform={`rotate(${angle}, 30, 30)`} opacity="0.85" />
             ))}
             <circle cx="30" cy="30" r="8" fill="hsl(45, 95%, 60%)" />
           </svg>
         </div>
       )}
-
-      {/* Bud */}
       {stage === "bud" && (
         <div className="animate-bounce-in mb-[-4px]">
           <svg width="40" height="40" viewBox="0 0 40 40">
@@ -37,8 +28,6 @@ function PlantSVG({ stage }: { stage: PlantStage }) {
           </svg>
         </div>
       )}
-
-      {/* Leaves */}
       {(stage === "leaves" || stage === "bud" || stage === "flower") && (
         <div className={`animate-sway ${stage === "leaves" ? "" : "mt-[-8px]"}`}>
           <svg width="70" height="40" viewBox="0 0 70 40">
@@ -47,8 +36,6 @@ function PlantSVG({ stage }: { stage: PlantStage }) {
           </svg>
         </div>
       )}
-
-      {/* Stem */}
       {stage !== "seed" && (
         <div className="animate-grow-up">
           <svg width="10" height={stage === "sprout" ? "30" : "50"} viewBox={`0 0 10 ${stage === "sprout" ? 30 : 50}`}>
@@ -56,8 +43,6 @@ function PlantSVG({ stage }: { stage: PlantStage }) {
           </svg>
         </div>
       )}
-
-      {/* Sprout leaves */}
       {stage === "sprout" && (
         <div className="animate-sway mt-[-12px]">
           <svg width="30" height="20" viewBox="0 0 30 20">
@@ -66,8 +51,6 @@ function PlantSVG({ stage }: { stage: PlantStage }) {
           </svg>
         </div>
       )}
-
-      {/* Seed */}
       {stage === "seed" && (
         <div className="animate-bounce-in">
           <svg width="24" height="24" viewBox="0 0 24 24">
@@ -112,23 +95,20 @@ function StarDisplay({ count }: { count: number }) {
 
 export default function Garden({ currentStage, flowers, stars }: GardenProps) {
   return (
-    <div className="bg-card/80 rounded-2xl p-4 border-2 border-border shadow-lg h-full flex flex-col">
+    <div className="clay-card p-5 h-full flex flex-col">
       <h2 className="font-heading text-xl text-center mb-2 text-foreground">🌱 My Garden</h2>
 
       {stars > 0 && <StarDisplay count={stars} />}
 
-      {/* Current growing plant */}
       <div className="flex-1 flex flex-col items-center justify-end mb-4">
         <PlantSVG stage={currentStage} />
-        {/* Dirt */}
         <div className="w-32 h-6 bg-garden-dirt rounded-t-full mt-[-2px]" />
-        <p className="text-sm text-muted-foreground mt-2 font-body capitalize">{currentStage}</p>
+        <p className="text-sm text-muted-foreground mt-2 capitalize">{currentStage}</p>
       </div>
 
-      {/* Completed flowers row */}
       {flowers > 0 && (
         <div className="border-t border-border pt-3">
-          <p className="text-xs text-muted-foreground text-center mb-2 font-body">Bloomed: {flowers} 🌸</p>
+          <p className="text-xs text-muted-foreground text-center mb-2">Bloomed: {flowers} 🌸</p>
           <div className="flex flex-wrap gap-1 justify-center">
             {Array.from({ length: Math.min(flowers, 12) }).map((_, i) => (
               <CompletedFlower key={i} index={i} />
