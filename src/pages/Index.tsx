@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { BookOpen, GitCompareArrows, Scale, FileText, Users, Sparkles } from "lucide-react";
+import DynamicSky from "@/components/DynamicSky";
 
 const activities = [
   { id: "vocabulary", label: "Vocabulary", icon: BookOpen, bg: "bg-primary", emoji: "📚", desc: "Learn new words!" },
