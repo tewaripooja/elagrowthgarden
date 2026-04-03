@@ -14,6 +14,7 @@ export default function Index() {
   const navigate = useNavigate();
 
   return (
+    <DynamicSky>
     <div className="min-h-screen flex flex-col items-center justify-center p-6">
       {/* Header */}
       <div className="text-center mb-10">
