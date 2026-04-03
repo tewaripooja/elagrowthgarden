@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { BookOpen, GitCompareArrows, Scale, FileText, Users, Sparkles } from "lucide-react";
+import DynamicSky from "@/components/DynamicSky";
 
 const activities = [
   { id: "vocabulary", label: "Vocabulary", icon: BookOpen, bg: "bg-primary", emoji: "📚", desc: "Learn new words!" },
@@ -13,6 +14,7 @@ export default function Index() {
   const navigate = useNavigate();
 
   return (
+    <DynamicSky>
     <div className="min-h-screen flex flex-col items-center justify-center p-6">
       {/* Header */}
       <div className="text-center mb-10">
@@ -55,5 +57,6 @@ export default function Index() {
         For readers ages 7–10 · Grades 2–5
       </p>
     </div>
+    </DynamicSky>
   );
 }

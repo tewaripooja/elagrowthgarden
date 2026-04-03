@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import DynamicSky from "@/components/DynamicSky";
 import { ArrowLeft, Loader2, BookOpen, Pencil, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Garden from "@/components/Garden";
@@ -60,6 +61,7 @@ export default function Activity() {
   };
 
   return (
+    <DynamicSky>
     <div className="min-h-screen p-4 md:p-6">
       {/* Top bar with progress */}
       <div className="max-w-7xl mx-auto mb-4">
@@ -164,5 +166,6 @@ export default function Activity() {
         </div>
       </div>
     </div>
+    </DynamicSky>
   );
 }
