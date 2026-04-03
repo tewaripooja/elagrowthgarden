@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import DynamicSky from "@/components/DynamicSky";
 import { ArrowLeft, Loader2, BookOpen, Pencil, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Garden from "@/components/Garden";
