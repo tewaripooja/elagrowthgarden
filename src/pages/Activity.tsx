@@ -61,6 +61,7 @@ export default function Activity() {
   };
 
   return (
+    <DynamicSky>
     <div className="min-h-screen p-4 md:p-6">
       {/* Top bar with progress */}
       <div className="max-w-7xl mx-auto mb-4">
