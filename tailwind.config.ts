@@ -14,8 +14,11 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["Fredoka", "sans-serif"],
-        body: ["Lexend", "sans-serif"],
+        heading: ["Fredoka", "Sniglet", "sans-serif"],
+        body: ["Sniglet", "Lexend", "sans-serif"],
+      },
+      fontSize: {
+        base: ["18px", { lineHeight: "1.6" }],
       },
       colors: {
         border: "hsl(var(--border))",
