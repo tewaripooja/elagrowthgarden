@@ -57,5 +57,6 @@ export default function Index() {
         For readers ages 7–10 · Grades 2–5
       </p>
     </div>
+    </DynamicSky>
   );
 }
