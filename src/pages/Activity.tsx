@@ -52,6 +52,12 @@ export default function Activity() {
     }
   };
 
+  // Auto-generate content on mount
+  useEffect(() => {
+    loadContent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleCorrect = (earnStar = false) => {
     gameState.handleCorrectAnswer(earnStar);
     if (earnStar) {
