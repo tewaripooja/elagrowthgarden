@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { BookOpen, GitCompareArrows, Scale, FileText, Users, Sparkles } from "lucide-react";
+import { BookOpen, GitCompareArrows, Scale, FileText, Users, Sparkles, Trophy } from "lucide-react";
 import DynamicSky from "@/components/DynamicSky";
 
 const activities = [
