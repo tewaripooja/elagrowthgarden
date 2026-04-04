@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import DynamicSky from "@/components/DynamicSky";
 import { ArrowLeft, Loader2, BookOpen, Pencil, Star } from "lucide-react";
@@ -51,6 +51,12 @@ export default function Activity() {
       setLoading(false);
     }
   };
+
+  // Auto-generate content on mount
+  useEffect(() => {
+    loadContent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCorrect = (earnStar = false) => {
     gameState.handleCorrectAnswer(earnStar);
@@ -106,18 +112,6 @@ export default function Activity() {
       <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
         {/* Left: Content area */}
         <div className="flex-1 lg:w-2/3">
-          {!data && !loading && (
-            <div className="clay-card flex flex-col items-center justify-center min-h-[300px] p-8">
-              <BookOpen className="h-12 w-12 text-primary mb-4" />
-              <p className="font-heading text-xl mb-4 text-foreground">Ready to read? 📖</p>
-              <button
-                onClick={loadContent}
-                className="clay-button bg-primary text-primary-foreground px-10 py-4 text-lg"
-              >
-                Generate a Story! 🌟
-              </button>
-            </div>
-          )}
 
           {loading && (
             <div className="clay-card flex flex-col items-center justify-center min-h-[300px] p-8">
