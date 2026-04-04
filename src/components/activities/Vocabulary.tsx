@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { VocabularyData } from "@/lib/ai";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -9,9 +8,8 @@ interface Props {
 }
 
 export default function Vocabulary({ data, onCorrect }: Props) {
-  const [answers, setAnswers] = useState<string[]>(Array(data.words.length).fill(""));
+  const [answers, setAnswers] = useState<(number | null)[]>(Array(data.words.length).fill(null));
   const [checked, setChecked] = useState<(boolean | null)[]>(Array(data.words.length).fill(null));
-  const [feedback, setFeedback] = useState<string[]>(Array(data.words.length).fill(""));
 
   const highlightStory = (story: string, words: { word: string }[]) => {
     let result = story;
@@ -22,19 +20,17 @@ export default function Vocabulary({ data, onCorrect }: Props) {
     return result;
   };
 
-  const checkAnswer = (index: number) => {
-    const userAnswer = answers[index].trim().toLowerCase();
-    const correctMeaning = data.words[index].meaning.toLowerCase();
-    // Simple check: if the user's answer contains key words from the meaning
-    const keyWords = correctMeaning.split(" ").filter((w) => w.length > 3);
-    const isCorrect = keyWords.some((kw) => userAnswer.includes(kw)) || userAnswer.length > 3 && correctMeaning.includes(userAnswer);
+  const handleSelect = (wordIndex: number, optIndex: number) => {
+    if (checked[wordIndex] !== null) return;
 
+    const newAnswers = [...answers];
+    newAnswers[wordIndex] = optIndex;
+    setAnswers(newAnswers);
+
+    const isCorrect = optIndex === data.words[wordIndex].correctIndex;
     const newChecked = [...checked];
-    const newFeedback = [...feedback];
-    newChecked[index] = isCorrect;
-    newFeedback[index] = isCorrect ? "Great job! ⭐" : `Not quite. It means: ${data.words[index].meaning}`;
+    newChecked[wordIndex] = isCorrect;
     setChecked(newChecked);
-    setFeedback(newFeedback);
 
     if (isCorrect) onCorrect(true);
   };
@@ -53,30 +49,29 @@ export default function Vocabulary({ data, onCorrect }: Props) {
         <h3 className="font-heading text-lg text-foreground">📝 What do these words mean?</h3>
         {data.words.map((w, i) => (
           <div key={i} className="bg-card rounded-xl p-4 border border-border">
-            <p className="font-heading text-base mb-2 text-accent">{w.word}</p>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Type the meaning..."
-                value={answers[i]}
-                onChange={(e) => {
-                  const newAnswers = [...answers];
-                  newAnswers[i] = e.target.value;
-                  setAnswers(newAnswers);
-                }}
-                disabled={checked[i] === true}
-                className="rounded-xl font-body"
-              />
-              <Button
-                onClick={() => checkAnswer(i)}
-                disabled={checked[i] === true || !answers[i].trim()}
-                className="rounded-xl font-heading"
-              >
-                Check
-              </Button>
+            <p className="font-heading text-base mb-3 text-accent">{w.word}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {w.options.map((opt, oi) => {
+                let variant: "outline" | "default" | "destructive" = "outline";
+                if (answers[i] === oi) variant = checked[i] ? "default" : "destructive";
+                else if (checked[i] !== null && oi === w.correctIndex) variant = "default";
+
+                return (
+                  <Button
+                    key={oi}
+                    variant={variant}
+                    onClick={() => handleSelect(i, oi)}
+                    disabled={checked[i] !== null}
+                    className="rounded-xl font-body text-left justify-start h-auto py-3"
+                  >
+                    {opt}
+                  </Button>
+                );
+              })}
             </div>
-            {feedback[i] && (
+            {checked[i] !== null && (
               <p className={`mt-2 text-sm font-body ${checked[i] ? "text-primary" : "text-destructive"}`}>
-                {feedback[i]}
+                {checked[i] ? "Great job! ⭐" : `The correct meaning is: ${w.options[w.correctIndex]}`}
               </p>
             )}
           </div>

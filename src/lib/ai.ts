@@ -4,7 +4,7 @@ export type ActivityType = "vocabulary" | "compare-contrast" | "fact-opinion" | 
 
 export interface VocabularyData {
   story: string;
-  words: { word: string; meaning: string }[];
+  words: { word: string; options: string[]; correctIndex: number }[];
 }
 
 export interface CompareContrastData {
