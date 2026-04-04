@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { BookOpen, GitCompareArrows, Scale, FileText, Users, Sparkles } from "lucide-react";
+import { BookOpen, GitCompareArrows, Scale, FileText, Users, Sparkles, Trophy } from "lucide-react";
 import DynamicSky from "@/components/DynamicSky";
 
 const activities = [
@@ -53,7 +53,15 @@ export default function Index() {
         })}
       </div>
 
-      <p className="mt-10 text-sm text-muted-foreground">
+      <button
+        onClick={() => navigate("/progress")}
+        className="mt-8 clay-button bg-garden-warning text-primary-foreground px-8 py-4 rounded-3xl font-heading text-lg flex items-center gap-2 hover:animate-micro-bounce"
+      >
+        <Trophy className="h-6 w-6" />
+        My Progress 🏆
+      </button>
+
+      <p className="mt-6 text-sm text-muted-foreground">
         For readers ages 7–10 · Grades 2–5
       </p>
     </div>

@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import DynamicSky from "@/components/DynamicSky";
-import { ArrowLeft, Loader2, BookOpen, Pencil, Star } from "lucide-react";
+import { ArrowLeft, Loader2, BookOpen, Pencil, Star, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Garden from "@/components/Garden";
 import { useGameState, type ActivityMode } from "@/hooks/useGameState";
@@ -23,6 +23,17 @@ const TITLES: Record<string, { label: string; icon: React.ReactNode }> = {
 
 const STAGES_COUNT = 5;
 
+// How many questions each activity type has
+function getQuestionCount(activityType: string, data: ActivityData): number {
+  if (!data) return 1;
+  if (activityType === "vocabulary") return (data as any).words?.length || 5;
+  if (activityType === "compare-contrast") return 1;
+  if (activityType === "fact-opinion") return (data as any).statements?.length || 5;
+  if (activityType === "summaries") return 1;
+  if (activityType === "character-traits") return (data as any).questions?.length || 3;
+  return 1;
+}
+
 export default function Activity() {
   const { mode } = useParams<{ mode: string }>();
   const navigate = useNavigate();
@@ -31,6 +42,9 @@ export default function Activity() {
   const [loading, setLoading] = useState(false);
   const [round, setRound] = useState(0);
   const [recentStar, setRecentStar] = useState(false);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [storyCompleted, setStoryCompleted] = useState(false);
+  const [levelUpMessage, setLevelUpMessage] = useState<string | null>(null);
 
   const activityType = mode as ActivityType;
   const titleInfo = TITLES[mode || ""] || { label: "Activity", icon: null };
@@ -40,6 +54,9 @@ export default function Activity() {
   const loadContent = async () => {
     setLoading(true);
     setData(null);
+    setCorrectCount(0);
+    setStoryCompleted(false);
+    setLevelUpMessage(null);
     try {
       const result = await generateContent(activityType, gameState.level);
       setData(result);
@@ -52,24 +69,43 @@ export default function Activity() {
     }
   };
 
-  // Auto-generate content on mount
   useEffect(() => {
     loadContent();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleCorrect = (earnStar = false) => {
+  const handleCorrect = useCallback((earnStar = false) => {
     gameState.handleCorrectAnswer(earnStar);
+    setCorrectCount((c) => c + 1);
     if (earnStar) {
       setRecentStar(true);
       setTimeout(() => setRecentStar(false), 2000);
     }
-  };
+  }, [gameState]);
+
+  const handleCompleteStory = useCallback(() => {
+    if (storyCompleted || !data) return;
+    setStoryCompleted(true);
+    const totalQ = getQuestionCount(activityType, data);
+    const prevLevel = gameState.level;
+    gameState.completeStory(activityType, totalQ, correctCount);
+    
+    // Check if level changed (will show on next render since state updates async)
+    setTimeout(() => {
+      const savedState = localStorage.getItem("ela-garden-state");
+      if (savedState) {
+        const parsed = JSON.parse(savedState);
+        if (parsed.level > prevLevel) {
+          setLevelUpMessage(`🎉 Amazing! You leveled up to Grade ${parsed.level}!`);
+          toast.success(`🎉 Level Up! You're now at Grade ${parsed.level}!`);
+        }
+      }
+    }, 100);
+  }, [storyCompleted, data, activityType, correctCount, gameState]);
 
   return (
     <DynamicSky>
     <div className="min-h-screen p-4 md:p-6">
-      {/* Top bar with progress */}
       <div className="max-w-7xl mx-auto mb-4">
         <div className="flex items-center gap-3 mb-3">
           <Button
@@ -91,7 +127,6 @@ export default function Activity() {
             Grade {gameState.level}
           </span>
 
-          {/* Star Badge */}
           <div className={`star-badge ${recentStar ? "glowing" : ""}`}>
             <Star className="h-6 w-6 text-primary-foreground fill-current" />
             <span className="absolute -bottom-1 -right-1 bg-foreground text-background text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
@@ -100,7 +135,21 @@ export default function Activity() {
           </div>
         </div>
 
-        {/* Progress bar */}
+        {/* Level-up progress indicator */}
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-xs text-muted-foreground">Perfect stories: {gameState.perfectStreak}/5 to next level</span>
+          <div className="flex gap-1">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className={`w-3 h-3 rounded-full transition-colors ${
+                  i < gameState.perfectStreak ? "bg-garden-success" : "bg-muted"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
         <div className="progress-bar-track">
           <div className="progress-bar-fill" style={{ width: `${progressPercent}%` }} />
         </div>
@@ -110,9 +159,7 @@ export default function Activity() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
-        {/* Left: Content area */}
         <div className="flex-1 lg:w-2/3">
-
           {loading && (
             <div className="clay-card flex flex-col items-center justify-center min-h-[300px] p-8">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
@@ -138,7 +185,22 @@ export default function Activity() {
                 <CharacterTraits data={data as any} onCorrect={() => handleCorrect()} />
               )}
 
-              <div className="mt-6 text-center">
+              {levelUpMessage && (
+                <div className="clay-card bg-garden-success/20 border-2 border-garden-success p-4 mt-4 text-center">
+                  <Trophy className="h-8 w-8 text-garden-success mx-auto mb-2" />
+                  <p className="font-heading text-lg text-foreground">{levelUpMessage}</p>
+                </div>
+              )}
+
+              <div className="mt-6 flex justify-center gap-4">
+                {!storyCompleted && (
+                  <button
+                    onClick={handleCompleteStory}
+                    className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading"
+                  >
+                    Submit Story ✅
+                  </button>
+                )}
                 <button
                   onClick={loadContent}
                   className="clay-button bg-card text-foreground border border-border px-8 py-3 font-heading"
@@ -150,7 +212,6 @@ export default function Activity() {
           )}
         </div>
 
-        {/* Right: Garden */}
         <div className="lg:w-1/3 min-w-[280px]">
           <Garden
             currentStage={gameState.currentStage}
