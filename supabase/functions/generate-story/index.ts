@@ -6,10 +6,10 @@ const corsHeaders = {
 };
 
 const PROMPTS: Record<string, (level: number) => string> = {
-  vocabulary: (level) => `You are a children's story writer for grade ${level} readers (ages 7-10). Generate a fun, engaging story of about 200 words. Then pick 5 challenging but grade-appropriate vocabulary words from the story and provide their meanings.
+  vocabulary: (level) => `You are a children's story writer for grade ${level} readers (ages 7-10). Generate a fun, engaging story of about 200 words. Then pick 5 challenging but grade-appropriate vocabulary words from the story. For each word, provide the correct meaning and 2 plausible but incorrect meanings as distractors. Also provide the index (0-based) of the correct option.
 
 Return ONLY valid JSON in this exact format:
-{"story":"...","words":[{"word":"...","meaning":"..."},{"word":"...","meaning":"..."},{"word":"...","meaning":"..."},{"word":"...","meaning":"..."},{"word":"...","meaning":"..."}]}`,
+{"story":"...","words":[{"word":"...","options":["correct meaning","wrong meaning 1","wrong meaning 2"],"correctIndex":0},{"word":"...","options":["wrong meaning","correct meaning","wrong meaning"],"correctIndex":1},{"word":"...","options":["wrong","wrong","correct"],"correctIndex":2},{"word":"...","options":["correct","wrong","wrong"],"correctIndex":0},{"word":"...","options":["wrong","correct","wrong"],"correctIndex":1}]}`,
 
   "compare-contrast": (level) => `You are a children's story writer for grade ${level} readers. Generate 2 short stories (about 100 words each) that share some similarities but also have clear differences. Then write one comparing question and a sample answer.
 
