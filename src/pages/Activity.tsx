@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import DynamicSky from "@/components/DynamicSky";
 import { ArrowLeft, Loader2, BookOpen, Pencil, Star } from "lucide-react";
