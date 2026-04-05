@@ -96,9 +96,10 @@ export default function Activity() {
       const savedState = localStorage.getItem("ela-garden-state");
       if (savedState) {
         const parsed = JSON.parse(savedState);
-        if (parsed.level > prevLevel) {
-          setLevelUpMessage(`🎉 Amazing! You leveled up to Grade ${parsed.level}!`);
-          toast.success(`🎉 Level Up! You're now at Grade ${parsed.level}!`);
+        const newActivityLevel = parsed.activityLevels?.[activityType]?.level || prevLevel;
+        if (newActivityLevel > prevLevel) {
+          setLevelUpMessage(`🎉 Amazing! ${titleInfo.label} leveled up to Grade ${newActivityLevel}!`);
+          toast.success(`🎉 Level Up! ${titleInfo.label} is now Grade ${newActivityLevel}!`);
         }
       }
     }, 100);
