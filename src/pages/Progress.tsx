@@ -76,8 +76,8 @@ export default function Progress() {
           </div>
 
           {/* Per-Activity Level Progress */}
-          <div className="clay-card p-6 mb-8">
-            <h2 className="font-heading text-xl font-bold text-foreground mb-4">
+          <div className="clay-card mb-8">
+            <h2 className="font-heading text-xl font-bold tracking-tight text-foreground mb-8">
               Grade Levels by Activity 🚀
             </h2>
             <div className="space-y-4">
