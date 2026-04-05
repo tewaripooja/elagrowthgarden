@@ -60,7 +60,7 @@ export default function Index() {
         My Progress 🏆
       </button>
 
-      <p className="mt-6 text-sm text-muted-foreground">
+      <p className="mt-6 text-sm text-white/70 drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]">
         For readers ages 7–10 · Grades 2–5
       </p>
     </div>
