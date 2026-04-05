@@ -88,7 +88,7 @@ export default function Activity() {
     if (storyCompleted || !data) return;
     setStoryCompleted(true);
     const totalQ = getQuestionCount(activityType, data);
-    const prevLevel = gameState.level;
+    const prevLevel = activityProgress.level;
     gameState.completeStory(activityType, totalQ, correctCount);
     
     // Check if level changed (will show on next render since state updates async)
