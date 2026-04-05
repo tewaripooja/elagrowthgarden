@@ -48,6 +48,7 @@ export default function Activity() {
 
   const activityType = mode as ActivityType;
   const titleInfo = TITLES[mode || ""] || { label: "Activity", icon: null };
+  const activityProgress = gameState.getActivityLevel(activityType);
 
   const progressPercent = (gameState.stageIndex / STAGES_COUNT) * 100;
 
