@@ -53,25 +53,25 @@ export default function Progress() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="clay-card p-5 flex flex-col items-center text-center">
-              <Star className="h-8 w-8 text-garden-warning mb-2" />
+            <div className="clay-card flex flex-col items-center text-center">
+              <Star className="h-8 w-8 text-garden-warning mb-3" />
               <span className="font-heading text-3xl font-bold text-foreground">{gameState.stars}</span>
-              <span className="text-sm text-muted-foreground">Stars Earned</span>
+              <span className="text-sm text-muted-foreground mt-1">Stars Earned</span>
             </div>
-            <div className="clay-card p-5 flex flex-col items-center text-center">
-              <Flower2 className="h-8 w-8 text-garden-pink mb-2" />
+            <div className="clay-card flex flex-col items-center text-center">
+              <Flower2 className="h-8 w-8 text-garden-pink mb-3" />
               <span className="font-heading text-3xl font-bold text-foreground">{gameState.flowers}</span>
-              <span className="text-sm text-muted-foreground">Flowers Grown</span>
+              <span className="text-sm text-muted-foreground mt-1">Flowers Grown</span>
             </div>
-            <div className="clay-card p-5 flex flex-col items-center text-center">
-              <Trophy className="h-8 w-8 text-garden-success mb-2" />
+            <div className="clay-card flex flex-col items-center text-center">
+              <Trophy className="h-8 w-8 text-garden-success mb-3" />
               <span className="font-heading text-3xl font-bold text-foreground">{overallAccuracy}%</span>
-              <span className="text-sm text-muted-foreground">Accuracy</span>
+              <span className="text-sm text-muted-foreground mt-1">Accuracy</span>
             </div>
-            <div className="clay-card p-5 flex flex-col items-center text-center">
-              <BookOpen className="h-8 w-8 text-primary mb-2" />
+            <div className="clay-card flex flex-col items-center text-center">
+              <BookOpen className="h-8 w-8 text-primary mb-3" />
               <span className="font-heading text-3xl font-bold text-foreground">{totalStories}</span>
-              <span className="text-sm text-muted-foreground">Stories Done</span>
+              <span className="text-sm text-muted-foreground mt-1">Stories Done</span>
             </div>
           </div>
 
