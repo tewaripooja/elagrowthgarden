@@ -38,8 +38,8 @@ export default function Index() {
             <button
               key={a.id}
               onClick={() => navigate(`/activity/${a.id}`)}
-              className={`${a.bg} text-primary-foreground clay-button rounded-3xl p-6
-                flex flex-col items-center gap-4 min-h-[168px] justify-center`}
+              className={`${a.bg} text-white clay-button rounded-3xl p-6
+                flex flex-col items-center gap-4 min-h-[168px] justify-center shadow-lg`}
             >
               <div className="flex items-center gap-2">
                 <span className="text-4xl">{a.emoji}</span>
