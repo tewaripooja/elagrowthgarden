@@ -25,7 +25,7 @@ export default function Index() {
           </h1>
           <Sparkles className="h-8 w-8 text-accent" />
         </div>
-        <p className="text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
+        <p className="text-lg text-white/90 max-w-lg mx-auto leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.4)]">
           Read fun stories, answer questions, and watch your garden grow! 🌸
         </p>
       </div>
