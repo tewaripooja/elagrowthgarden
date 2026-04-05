@@ -20,12 +20,12 @@ export default function Index() {
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 mb-4">
           <Sparkles className="h-8 w-8 text-accent" />
-          <h1 className="font-heading text-5xl md:text-6xl font-bold tracking-tight text-foreground">
+          <h1 className="font-heading text-5xl md:text-6xl font-bold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
             The ELA Growth Garden
           </h1>
           <Sparkles className="h-8 w-8 text-accent" />
         </div>
-        <p className="text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
+        <p className="text-lg text-white/90 max-w-lg mx-auto leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.4)]">
           Read fun stories, answer questions, and watch your garden grow! 🌸
         </p>
       </div>
@@ -38,8 +38,8 @@ export default function Index() {
             <button
               key={a.id}
               onClick={() => navigate(`/activity/${a.id}`)}
-              className={`${a.bg} text-primary-foreground clay-button rounded-3xl p-6
-                flex flex-col items-center gap-4 min-h-[168px] justify-center`}
+              className={`${a.bg} text-white clay-button rounded-3xl p-6
+                flex flex-col items-center gap-4 min-h-[168px] justify-center shadow-lg`}
             >
               <div className="flex items-center gap-2">
                 <span className="text-4xl">{a.emoji}</span>
@@ -60,7 +60,7 @@ export default function Index() {
         My Progress 🏆
       </button>
 
-      <p className="mt-6 text-sm text-muted-foreground">
+      <p className="mt-6 text-sm text-white/70 drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]">
         For readers ages 7–10 · Grades 2–5
       </p>
     </div>
