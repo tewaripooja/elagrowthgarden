@@ -46,7 +46,7 @@ export default function Progress() {
             >
               <ArrowLeft className="h-5 w-5 mr-1" /> Home
             </Button>
-            <h1 className="font-heading text-3xl md:text-4xl font-bold text-foreground">
+            <h1 className="font-heading text-3xl md:text-4xl font-bold tracking-tight text-foreground">
               My Progress 🏆
             </h1>
           </div>
