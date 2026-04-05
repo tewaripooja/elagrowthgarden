@@ -17,15 +17,15 @@ export default function Index() {
     <DynamicSky>
     <div className="min-h-screen flex flex-col items-center justify-center p-6">
       {/* Header */}
-      <div className="text-center mb-10">
-        <div className="inline-flex items-center gap-2 mb-3">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-2 mb-4">
           <Sparkles className="h-8 w-8 text-accent" />
-          <h1 className="font-heading text-5xl md:text-6xl font-bold text-foreground">
+          <h1 className="font-heading text-5xl md:text-6xl font-bold tracking-tight text-foreground">
             The ELA Growth Garden
           </h1>
           <Sparkles className="h-8 w-8 text-accent" />
         </div>
-        <p className="text-lg text-muted-foreground max-w-lg mx-auto">
+        <p className="text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
           Read fun stories, answer questions, and watch your garden grow! 🌸
         </p>
       </div>
