@@ -31,7 +31,7 @@ export default function Index() {
       </div>
 
       {/* Bento Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-4xl w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl w-full">
         {activities.map((a) => {
           const Icon = a.icon;
           return (
@@ -39,15 +39,14 @@ export default function Index() {
               key={a.id}
               onClick={() => navigate(`/activity/${a.id}`)}
               className={`${a.bg} text-primary-foreground clay-button rounded-3xl p-6
-                flex flex-col items-center gap-3 min-h-[160px] justify-center
-                hover:animate-micro-bounce`}
+                flex flex-col items-center gap-4 min-h-[168px] justify-center`}
             >
               <div className="flex items-center gap-2">
                 <span className="text-4xl">{a.emoji}</span>
                 <Icon className="h-7 w-7 opacity-80" />
               </div>
-              <span className="font-heading text-xl font-semibold">{a.label}</span>
-              <span className="text-sm opacity-80 font-normal">{a.desc}</span>
+              <span className="font-heading text-xl font-bold tracking-tight">{a.label}</span>
+              <span className="text-sm opacity-80 font-normal leading-relaxed">{a.desc}</span>
             </button>
           );
         })}
