@@ -59,7 +59,7 @@ export default function Activity() {
     setStoryCompleted(false);
     setLevelUpMessage(null);
     try {
-      const result = await generateContent(activityType, gameState.level);
+      const result = await generateContent(activityType, activityProgress.level);
       setData(result);
       setRound((r) => r + 1);
     } catch (e) {
