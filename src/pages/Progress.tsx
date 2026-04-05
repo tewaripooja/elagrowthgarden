@@ -122,8 +122,8 @@ export default function Progress() {
           </div>
 
           {/* Recent History */}
-          <div className="clay-card p-6">
-            <h2 className="font-heading text-xl font-bold text-foreground mb-4">
+          <div className="clay-card">
+            <h2 className="font-heading text-xl font-bold tracking-tight text-foreground mb-8">
               Recent Stories 📖
             </h2>
             {gameState.storyHistory.length === 0 ? (

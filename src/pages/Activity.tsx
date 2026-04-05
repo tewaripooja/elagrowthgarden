@@ -120,7 +120,7 @@ export default function Activity() {
 
           <div className="flex items-center gap-2">
             {titleInfo.icon}
-            <h1 className="font-heading text-2xl md:text-3xl font-bold text-foreground">
+            <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight text-foreground">
               {titleInfo.label}
             </h1>
           </div>

@@ -118,9 +118,10 @@
   .reading-card {
     background: hsl(0 0% 100%);
     border-radius: 20px;
-    box-shadow: var(--clay-shadow);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    border: 1px solid hsl(var(--border) / 0.3);
     border-left: 6px solid hsl(var(--primary));
-    padding: 1.5rem 2rem;
+    padding: 24px 32px;
     font-size: 18px;
     line-height: 1.8;
     color: hsl(220 25% 18%);

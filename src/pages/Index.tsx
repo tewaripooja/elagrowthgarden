@@ -54,7 +54,7 @@ export default function Index() {
 
       <button
         onClick={() => navigate("/progress")}
-        className="mt-8 clay-button bg-garden-warning text-primary-foreground px-8 py-4 rounded-3xl font-heading text-lg flex items-center gap-2 hover:animate-micro-bounce"
+        className="mt-8 clay-button bg-garden-warning text-primary-foreground px-8 py-4 rounded-3xl font-heading text-lg flex items-center gap-2"
       >
         <Trophy className="h-6 w-6" />
         My Progress 🏆
