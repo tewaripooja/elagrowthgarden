@@ -48,6 +48,7 @@ export default function Activity() {
 
   const activityType = mode as ActivityType;
   const titleInfo = TITLES[mode || ""] || { label: "Activity", icon: null };
+  const activityProgress = gameState.getActivityLevel(activityType);
 
   const progressPercent = (gameState.stageIndex / STAGES_COUNT) * 100;
 
@@ -58,7 +59,7 @@ export default function Activity() {
     setStoryCompleted(false);
     setLevelUpMessage(null);
     try {
-      const result = await generateContent(activityType, gameState.level);
+      const result = await generateContent(activityType, activityProgress.level);
       setData(result);
       setRound((r) => r + 1);
     } catch (e) {
@@ -87,7 +88,7 @@ export default function Activity() {
     if (storyCompleted || !data) return;
     setStoryCompleted(true);
     const totalQ = getQuestionCount(activityType, data);
-    const prevLevel = gameState.level;
+    const prevLevel = activityProgress.level;
     gameState.completeStory(activityType, totalQ, correctCount);
     
     // Check if level changed (will show on next render since state updates async)
@@ -95,9 +96,10 @@ export default function Activity() {
       const savedState = localStorage.getItem("ela-garden-state");
       if (savedState) {
         const parsed = JSON.parse(savedState);
-        if (parsed.level > prevLevel) {
-          setLevelUpMessage(`🎉 Amazing! You leveled up to Grade ${parsed.level}!`);
-          toast.success(`🎉 Level Up! You're now at Grade ${parsed.level}!`);
+        const newActivityLevel = parsed.activityLevels?.[activityType]?.level || prevLevel;
+        if (newActivityLevel > prevLevel) {
+          setLevelUpMessage(`🎉 Amazing! ${titleInfo.label} leveled up to Grade ${newActivityLevel}!`);
+          toast.success(`🎉 Level Up! ${titleInfo.label} is now Grade ${newActivityLevel}!`);
         }
       }
     }, 100);
@@ -124,7 +126,7 @@ export default function Activity() {
           </div>
 
           <span className="ml-auto text-sm text-muted-foreground clay-card px-4 py-2">
-            Grade {gameState.level}
+            Grade {activityProgress.level}
           </span>
 
           <div className={`star-badge ${recentStar ? "glowing" : ""}`}>
@@ -137,13 +139,13 @@ export default function Activity() {
 
         {/* Level-up progress indicator */}
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs text-muted-foreground">Perfect stories: {gameState.perfectStreak}/5 to next level</span>
+          <span className="text-xs text-muted-foreground">Perfect stories: {activityProgress.perfectStreak}/5 to next level</span>
           <div className="flex gap-1">
             {Array.from({ length: 5 }).map((_, i) => (
               <div
                 key={i}
                 className={`w-3 h-3 rounded-full transition-colors ${
-                  i < gameState.perfectStreak ? "bg-garden-success" : "bg-muted"
+                  i < activityProgress.perfectStreak ? "bg-garden-success" : "bg-muted"
                 }`}
               />
             ))}

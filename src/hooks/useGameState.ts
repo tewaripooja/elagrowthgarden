@@ -7,6 +7,8 @@ const STAGES: PlantStage[] = ["seed", "sprout", "leaves", "bud", "flower"];
 const STORAGE_KEY = "ela-garden-state";
 const PERFECT_STORIES_TO_LEVEL_UP = 5;
 
+const ALL_ACTIVITIES: ActivityMode[] = ["vocabulary", "compare-contrast", "fact-opinion", "summaries", "character-traits"];
+
 export interface StoryRecord {
   activityType: string;
   date: string;
@@ -16,21 +18,42 @@ export interface StoryRecord {
   level: number;
 }
 
-export interface GameState {
+export interface ActivityProgress {
   level: number;
+  perfectStreak: number;
+}
+
+export interface GameState {
+  level: number; // kept for backward compat / overall display
   stars: number;
   currentStage: PlantStage;
   stageIndex: number;
   flowers: number;
   totalCorrect: number;
-  perfectStreak: number; // consecutive perfect stories at current level
+  perfectStreak: number;
   storyHistory: StoryRecord[];
+  activityLevels: Record<string, ActivityProgress>;
+}
+
+function defaultActivityLevels(baseLevel: number): Record<string, ActivityProgress> {
+  const levels: Record<string, ActivityProgress> = {};
+  ALL_ACTIVITIES.forEach((a) => {
+    levels[a] = { level: baseLevel, perfectStreak: 0 };
+  });
+  return levels;
 }
 
 function loadState(): GameState {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Migrate: if no activityLevels, create from global level
+      if (!parsed.activityLevels) {
+        parsed.activityLevels = defaultActivityLevels(parsed.level || 2);
+      }
+      return parsed;
+    }
   } catch {}
   return {
     level: 2,
@@ -41,6 +64,7 @@ function loadState(): GameState {
     totalCorrect: 0,
     perfectStreak: 0,
     storyHistory: [],
+    activityLevels: defaultActivityLevels(2),
   };
 }
 
@@ -74,8 +98,20 @@ export function useGameState() {
   const completeStory = useCallback((activityType: string, totalQuestions: number, correctAnswers: number) => {
     setState((prev) => {
       const perfect = correctAnswers === totalQuestions;
-      const newStreak = perfect ? prev.perfectStreak + 1 : 0;
-      const shouldLevelUp = newStreak >= PERFECT_STORIES_TO_LEVEL_UP && prev.level < 5;
+
+      const activityLevels = { ...prev.activityLevels };
+      const current = activityLevels[activityType] || { level: 2, perfectStreak: 0 };
+      const newStreak = perfect ? current.perfectStreak + 1 : 0;
+      const shouldLevelUp = newStreak >= PERFECT_STORIES_TO_LEVEL_UP && current.level < 5;
+
+      activityLevels[activityType] = {
+        level: shouldLevelUp ? current.level + 1 : current.level,
+        perfectStreak: shouldLevelUp ? 0 : newStreak,
+      };
+
+      // Global level = minimum across all activities (or you could use max; using min keeps overall conservative)
+      const allLevels = ALL_ACTIVITIES.map((a) => activityLevels[a]?.level || 2);
+      const globalLevel = Math.min(...allLevels);
 
       const record: StoryRecord = {
         activityType,
@@ -83,13 +119,17 @@ export function useGameState() {
         totalQuestions,
         correctAnswers,
         perfect,
-        level: prev.level,
+        level: activityLevels[activityType].level,
       };
+
+      // Also update legacy perfectStreak for backward compat
+      const globalStreak = perfect ? prev.perfectStreak + 1 : 0;
 
       const next: GameState = {
         ...prev,
-        perfectStreak: shouldLevelUp ? 0 : newStreak,
-        level: shouldLevelUp ? prev.level + 1 : prev.level,
+        perfectStreak: globalStreak,
+        level: globalLevel,
+        activityLevels,
         storyHistory: [...prev.storyHistory, record],
       };
       saveState(next);
@@ -97,5 +137,9 @@ export function useGameState() {
     });
   }, []);
 
-  return { ...state, handleCorrectAnswer, completeStory };
+  const getActivityLevel = useCallback((activityType: string): ActivityProgress => {
+    return state.activityLevels?.[activityType] || { level: 2, perfectStreak: 0 };
+  }, [state.activityLevels]);
+
+  return { ...state, handleCorrectAnswer, completeStory, getActivityLevel };
 }

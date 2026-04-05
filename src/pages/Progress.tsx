@@ -12,6 +12,8 @@ const ACTIVITY_LABELS: Record<string, string> = {
   "character-traits": "🧑 Character Traits",
 };
 
+const ALL_ACTIVITIES = ["vocabulary", "compare-contrast", "fact-opinion", "summaries", "character-traits"];
+
 export default function Progress() {
   const navigate = useNavigate();
   const gameState = useGameState();
@@ -26,7 +28,6 @@ export default function Progress() {
       )
     : 0;
 
-  // Group stories by activity type for breakdown
   const byActivity = gameState.storyHistory.reduce<Record<string, StoryRecord[]>>((acc, s) => {
     acc[s.activityType] = acc[s.activityType] || [];
     acc[s.activityType].push(s);
@@ -37,7 +38,6 @@ export default function Progress() {
     <DynamicSky>
       <div className="min-h-screen p-4 md:p-6">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
           <div className="flex items-center gap-3 mb-6">
             <Button
               variant="ghost"
@@ -54,11 +54,6 @@ export default function Progress() {
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div className="clay-card p-5 flex flex-col items-center text-center">
-              <TrendingUp className="h-8 w-8 text-primary mb-2" />
-              <span className="font-heading text-3xl font-bold text-foreground">{gameState.level}</span>
-              <span className="text-sm text-muted-foreground">Grade Level</span>
-            </div>
-            <div className="clay-card p-5 flex flex-col items-center text-center">
               <Star className="h-8 w-8 text-garden-warning mb-2" />
               <span className="font-heading text-3xl font-bold text-foreground">{gameState.stars}</span>
               <span className="text-sm text-muted-foreground">Stars Earned</span>
@@ -73,70 +68,57 @@ export default function Progress() {
               <span className="font-heading text-3xl font-bold text-foreground">{overallAccuracy}%</span>
               <span className="text-sm text-muted-foreground">Accuracy</span>
             </div>
-          </div>
-
-          {/* Level Progress */}
-          <div className="clay-card p-6 mb-8">
-            <h2 className="font-heading text-xl font-bold text-foreground mb-3">
-              Level Up Progress 🚀
-            </h2>
-            <p className="text-muted-foreground mb-3">
-              Get 100% on 5 stories in a row to reach Grade {Math.min(gameState.level + 1, 5)}!
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="flex gap-2">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
-                      i < gameState.perfectStreak
-                        ? "bg-garden-success text-primary-foreground scale-110"
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {i < gameState.perfectStreak ? "⭐" : (i + 1)}
-                  </div>
-                ))}
-              </div>
-              <span className="text-sm text-muted-foreground">
-                {gameState.perfectStreak}/5 perfect stories
-              </span>
+            <div className="clay-card p-5 flex flex-col items-center text-center">
+              <BookOpen className="h-8 w-8 text-primary mb-2" />
+              <span className="font-heading text-3xl font-bold text-foreground">{totalStories}</span>
+              <span className="text-sm text-muted-foreground">Stories Done</span>
             </div>
-            {gameState.level >= 5 && (
-              <p className="mt-3 text-garden-success font-heading font-bold">
-                🎉 You've reached the highest level! Amazing work!
-              </p>
-            )}
           </div>
 
-          {/* Activity Breakdown */}
+          {/* Per-Activity Level Progress */}
           <div className="clay-card p-6 mb-8">
             <h2 className="font-heading text-xl font-bold text-foreground mb-4">
-              Activity Breakdown 📊
+              Grade Levels by Activity 🚀
             </h2>
-            {Object.keys(byActivity).length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">
-                No stories completed yet. Go try an activity! 🌱
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {Object.entries(byActivity).map(([type, records]) => {
-                  const perfect = records.filter((r) => r.perfect).length;
-                  const total = records.length;
-                  return (
-                    <div key={type} className="flex items-center justify-between p-3 rounded-2xl bg-muted/50">
+            <div className="space-y-4">
+              {ALL_ACTIVITIES.map((actType) => {
+                const progress = gameState.getActivityLevel(actType);
+                const stories = byActivity[actType] || [];
+                const perfect = stories.filter((r) => r.perfect).length;
+                return (
+                  <div key={actType} className="p-4 rounded-2xl bg-muted/50">
+                    <div className="flex items-center justify-between mb-2">
                       <span className="font-heading font-semibold text-foreground">
-                        {ACTIVITY_LABELS[type] || type}
+                        {ACTIVITY_LABELS[actType]}
                       </span>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span>{total} stories</span>
-                        <span className="text-garden-success font-bold">{perfect} perfect</span>
-                      </div>
+                      <span className="text-sm font-bold text-primary">
+                        Grade {progress.level}
+                        {progress.level >= 5 && " 🏆"}
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-all ${
+                              i < progress.perfectStreak
+                                ? "bg-garden-success text-primary-foreground scale-110"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {i < progress.perfectStreak ? "⭐" : (i + 1)}
+                          </div>
+                        ))}
+                      </div>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        {stories.length} stories · {perfect} perfect
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Recent History */}
