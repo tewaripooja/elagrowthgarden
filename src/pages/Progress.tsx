@@ -46,38 +46,38 @@ export default function Progress() {
             >
               <ArrowLeft className="h-5 w-5 mr-1" /> Home
             </Button>
-            <h1 className="font-heading text-3xl md:text-4xl font-bold text-foreground">
+            <h1 className="font-heading text-3xl md:text-4xl font-bold tracking-tight text-foreground">
               My Progress 🏆
             </h1>
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="clay-card p-5 flex flex-col items-center text-center">
-              <Star className="h-8 w-8 text-garden-warning mb-2" />
+            <div className="clay-card flex flex-col items-center text-center">
+              <Star className="h-8 w-8 text-garden-warning mb-3" />
               <span className="font-heading text-3xl font-bold text-foreground">{gameState.stars}</span>
-              <span className="text-sm text-muted-foreground">Stars Earned</span>
+              <span className="text-sm text-muted-foreground mt-1">Stars Earned</span>
             </div>
-            <div className="clay-card p-5 flex flex-col items-center text-center">
-              <Flower2 className="h-8 w-8 text-garden-pink mb-2" />
+            <div className="clay-card flex flex-col items-center text-center">
+              <Flower2 className="h-8 w-8 text-garden-pink mb-3" />
               <span className="font-heading text-3xl font-bold text-foreground">{gameState.flowers}</span>
-              <span className="text-sm text-muted-foreground">Flowers Grown</span>
+              <span className="text-sm text-muted-foreground mt-1">Flowers Grown</span>
             </div>
-            <div className="clay-card p-5 flex flex-col items-center text-center">
-              <Trophy className="h-8 w-8 text-garden-success mb-2" />
+            <div className="clay-card flex flex-col items-center text-center">
+              <Trophy className="h-8 w-8 text-garden-success mb-3" />
               <span className="font-heading text-3xl font-bold text-foreground">{overallAccuracy}%</span>
-              <span className="text-sm text-muted-foreground">Accuracy</span>
+              <span className="text-sm text-muted-foreground mt-1">Accuracy</span>
             </div>
-            <div className="clay-card p-5 flex flex-col items-center text-center">
-              <BookOpen className="h-8 w-8 text-primary mb-2" />
+            <div className="clay-card flex flex-col items-center text-center">
+              <BookOpen className="h-8 w-8 text-primary mb-3" />
               <span className="font-heading text-3xl font-bold text-foreground">{totalStories}</span>
-              <span className="text-sm text-muted-foreground">Stories Done</span>
+              <span className="text-sm text-muted-foreground mt-1">Stories Done</span>
             </div>
           </div>
 
           {/* Per-Activity Level Progress */}
-          <div className="clay-card p-6 mb-8">
-            <h2 className="font-heading text-xl font-bold text-foreground mb-4">
+          <div className="clay-card mb-8">
+            <h2 className="font-heading text-xl font-bold tracking-tight text-foreground mb-8">
               Grade Levels by Activity 🚀
             </h2>
             <div className="space-y-4">
@@ -122,8 +122,8 @@ export default function Progress() {
           </div>
 
           {/* Recent History */}
-          <div className="clay-card p-6">
-            <h2 className="font-heading text-xl font-bold text-foreground mb-4">
+          <div className="clay-card">
+            <h2 className="font-heading text-xl font-bold tracking-tight text-foreground mb-8">
               Recent Stories 📖
             </h2>
             {gameState.storyHistory.length === 0 ? (

@@ -17,21 +17,21 @@ export default function Index() {
     <DynamicSky>
     <div className="min-h-screen flex flex-col items-center justify-center p-6">
       {/* Header */}
-      <div className="text-center mb-10">
-        <div className="inline-flex items-center gap-2 mb-3">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-2 mb-4">
           <Sparkles className="h-8 w-8 text-accent" />
-          <h1 className="font-heading text-5xl md:text-6xl font-bold text-foreground">
+          <h1 className="font-heading text-5xl md:text-6xl font-bold tracking-tight text-foreground">
             The ELA Growth Garden
           </h1>
           <Sparkles className="h-8 w-8 text-accent" />
         </div>
-        <p className="text-lg text-muted-foreground max-w-lg mx-auto">
+        <p className="text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
           Read fun stories, answer questions, and watch your garden grow! 🌸
         </p>
       </div>
 
       {/* Bento Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-4xl w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl w-full">
         {activities.map((a) => {
           const Icon = a.icon;
           return (
@@ -39,15 +39,14 @@ export default function Index() {
               key={a.id}
               onClick={() => navigate(`/activity/${a.id}`)}
               className={`${a.bg} text-primary-foreground clay-button rounded-3xl p-6
-                flex flex-col items-center gap-3 min-h-[160px] justify-center
-                hover:animate-micro-bounce`}
+                flex flex-col items-center gap-4 min-h-[168px] justify-center`}
             >
               <div className="flex items-center gap-2">
                 <span className="text-4xl">{a.emoji}</span>
                 <Icon className="h-7 w-7 opacity-80" />
               </div>
-              <span className="font-heading text-xl font-semibold">{a.label}</span>
-              <span className="text-sm opacity-80 font-normal">{a.desc}</span>
+              <span className="font-heading text-xl font-bold tracking-tight">{a.label}</span>
+              <span className="text-sm opacity-80 font-normal leading-relaxed">{a.desc}</span>
             </button>
           );
         })}
@@ -55,7 +54,7 @@ export default function Index() {
 
       <button
         onClick={() => navigate("/progress")}
-        className="mt-8 clay-button bg-garden-warning text-primary-foreground px-8 py-4 rounded-3xl font-heading text-lg flex items-center gap-2 hover:animate-micro-bounce"
+        className="mt-8 clay-button bg-garden-warning text-primary-foreground px-8 py-4 rounded-3xl font-heading text-lg flex items-center gap-2"
       >
         <Trophy className="h-6 w-6" />
         My Progress 🏆
