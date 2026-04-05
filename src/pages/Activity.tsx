@@ -125,7 +125,7 @@ export default function Activity() {
           </div>
 
           <span className="ml-auto text-sm text-muted-foreground clay-card px-4 py-2">
-            Grade {gameState.level}
+            Grade {activityProgress.level}
           </span>
 
           <div className={`star-badge ${recentStar ? "glowing" : ""}`}>
