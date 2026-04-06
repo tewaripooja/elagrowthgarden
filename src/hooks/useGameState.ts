@@ -162,7 +162,7 @@ export function useGameState() {
   }, []);
 
   const getActivityLevel = useCallback((activityType: string): ActivityProgress => {
-    return state.activityLevels?.[activityType] || { level: 2, perfectStreak: 0 };
+    return state.activityLevels?.[activityType] || { level: 2, perfectStreak: 0, lastPerfectDate: null };
   }, [state.activityLevels]);
 
   return { ...state, handleCorrectAnswer, completeStory, getActivityLevel };
