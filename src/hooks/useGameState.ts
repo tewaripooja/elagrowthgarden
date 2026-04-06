@@ -99,15 +99,38 @@ export function useGameState() {
   const completeStory = useCallback((activityType: string, totalQuestions: number, correctAnswers: number) => {
     setState((prev) => {
       const perfect = correctAnswers === totalQuestions;
+      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
       const activityLevels = { ...prev.activityLevels };
-      const current = activityLevels[activityType] || { level: 2, perfectStreak: 0 };
-      const newStreak = perfect ? current.perfectStreak + 1 : 0;
-      const shouldLevelUp = newStreak >= PERFECT_STORIES_TO_LEVEL_UP && current.level < 5;
+      const current = activityLevels[activityType] || { level: 2, perfectStreak: 0, lastPerfectDate: null };
+
+      let newStreak = current.perfectStreak;
+      let lastDate = current.lastPerfectDate;
+
+      if (perfect) {
+        if (lastDate === today) {
+          // Already counted today — streak stays the same
+        } else if (lastDate && isConsecutiveDay(lastDate, today)) {
+          // New consecutive day
+          newStreak = current.perfectStreak + 1;
+          lastDate = today;
+        } else {
+          // First day or streak broken (gap > 1 day)
+          newStreak = 1;
+          lastDate = today;
+        }
+      } else {
+        // Not perfect — reset streak
+        newStreak = 0;
+        lastDate = null;
+      }
+
+      const shouldLevelUp = newStreak >= PERFECT_DAYS_TO_LEVEL_UP && current.level < 5;
 
       activityLevels[activityType] = {
         level: shouldLevelUp ? current.level + 1 : current.level,
         perfectStreak: shouldLevelUp ? 0 : newStreak,
+        lastPerfectDate: shouldLevelUp ? null : lastDate,
       };
 
       // Global level = minimum across all activities (or you could use max; using min keeps overall conservative)
