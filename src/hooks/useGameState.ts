@@ -5,7 +5,7 @@ export type ActivityMode = "vocabulary" | "compare-contrast" | "fact-opinion" | 
 
 const STAGES: PlantStage[] = ["seed", "sprout", "leaves", "bud", "flower"];
 const STORAGE_KEY = "ela-garden-state";
-const PERFECT_STORIES_TO_LEVEL_UP = 5;
+const PERFECT_DAYS_TO_LEVEL_UP = 7;
 
 const ALL_ACTIVITIES: ActivityMode[] = ["vocabulary", "compare-contrast", "fact-opinion", "summaries", "character-traits"];
 
@@ -20,7 +20,8 @@ export interface StoryRecord {
 
 export interface ActivityProgress {
   level: number;
-  perfectStreak: number;
+  perfectStreak: number; // consecutive days with 100% accuracy
+  lastPerfectDate: string | null; // ISO date string (YYYY-MM-DD) of last perfect day
 }
 
 export interface GameState {
@@ -35,10 +36,18 @@ export interface GameState {
   activityLevels: Record<string, ActivityProgress>;
 }
 
+/** Check if dateB is exactly 1 day after dateA (both YYYY-MM-DD strings) */
+function isConsecutiveDay(dateA: string, dateB: string): boolean {
+  const a = new Date(dateA + "T00:00:00");
+  const b = new Date(dateB + "T00:00:00");
+  const diffMs = b.getTime() - a.getTime();
+  return diffMs === 86400000; // exactly 1 day in ms
+}
+
 function defaultActivityLevels(baseLevel: number): Record<string, ActivityProgress> {
   const levels: Record<string, ActivityProgress> = {};
   ALL_ACTIVITIES.forEach((a) => {
-    levels[a] = { level: baseLevel, perfectStreak: 0 };
+    levels[a] = { level: baseLevel, perfectStreak: 0, lastPerfectDate: null };
   });
   return levels;
 }
@@ -98,15 +107,38 @@ export function useGameState() {
   const completeStory = useCallback((activityType: string, totalQuestions: number, correctAnswers: number) => {
     setState((prev) => {
       const perfect = correctAnswers === totalQuestions;
+      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
       const activityLevels = { ...prev.activityLevels };
-      const current = activityLevels[activityType] || { level: 2, perfectStreak: 0 };
-      const newStreak = perfect ? current.perfectStreak + 1 : 0;
-      const shouldLevelUp = newStreak >= PERFECT_STORIES_TO_LEVEL_UP && current.level < 5;
+      const current = activityLevels[activityType] || { level: 2, perfectStreak: 0, lastPerfectDate: null };
+
+      let newStreak = current.perfectStreak;
+      let lastDate = current.lastPerfectDate;
+
+      if (perfect) {
+        if (lastDate === today) {
+          // Already counted today — streak stays the same
+        } else if (lastDate && isConsecutiveDay(lastDate, today)) {
+          // New consecutive day
+          newStreak = current.perfectStreak + 1;
+          lastDate = today;
+        } else {
+          // First day or streak broken (gap > 1 day)
+          newStreak = 1;
+          lastDate = today;
+        }
+      } else {
+        // Not perfect — reset streak
+        newStreak = 0;
+        lastDate = null;
+      }
+
+      const shouldLevelUp = newStreak >= PERFECT_DAYS_TO_LEVEL_UP && current.level < 5;
 
       activityLevels[activityType] = {
         level: shouldLevelUp ? current.level + 1 : current.level,
         perfectStreak: shouldLevelUp ? 0 : newStreak,
+        lastPerfectDate: shouldLevelUp ? null : lastDate,
       };
 
       // Global level = minimum across all activities (or you could use max; using min keeps overall conservative)
@@ -138,7 +170,7 @@ export function useGameState() {
   }, []);
 
   const getActivityLevel = useCallback((activityType: string): ActivityProgress => {
-    return state.activityLevels?.[activityType] || { level: 2, perfectStreak: 0 };
+    return state.activityLevels?.[activityType] || { level: 2, perfectStreak: 0, lastPerfectDate: null };
   }, [state.activityLevels]);
 
   return { ...state, handleCorrectAnswer, completeStory, getActivityLevel };
