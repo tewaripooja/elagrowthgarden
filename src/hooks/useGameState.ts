@@ -36,6 +36,14 @@ export interface GameState {
   activityLevels: Record<string, ActivityProgress>;
 }
 
+/** Check if dateB is exactly 1 day after dateA (both YYYY-MM-DD strings) */
+function isConsecutiveDay(dateA: string, dateB: string): boolean {
+  const a = new Date(dateA + "T00:00:00");
+  const b = new Date(dateB + "T00:00:00");
+  const diffMs = b.getTime() - a.getTime();
+  return diffMs === 86400000; // exactly 1 day in ms
+}
+
 function defaultActivityLevels(baseLevel: number): Record<string, ActivityProgress> {
   const levels: Record<string, ActivityProgress> = {};
   ALL_ACTIVITIES.forEach((a) => {
