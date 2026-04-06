@@ -139,9 +139,9 @@ export default function Activity() {
 
         {/* Level-up progress indicator */}
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs text-muted-foreground">Perfect stories: {activityProgress.perfectStreak}/5 to next level</span>
+          <span className="text-xs text-muted-foreground">Perfect days: {activityProgress.perfectStreak}/7 to next level</span>
           <div className="flex gap-1">
-            {Array.from({ length: 5 }).map((_, i) => (
+            {Array.from({ length: 7 }).map((_, i) => (
               <div
                 key={i}
                 className={`w-3 h-3 rounded-full transition-colors ${

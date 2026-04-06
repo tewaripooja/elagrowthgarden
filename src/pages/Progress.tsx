@@ -98,10 +98,10 @@ export default function Progress() {
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex gap-1">
-                        {Array.from({ length: 5 }).map((_, i) => (
+                        {Array.from({ length: 7 }).map((_, i) => (
                           <div
                             key={i}
-                            className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-all ${
+                            className={`w-5 h-5 rounded-lg flex items-center justify-center text-xs transition-all ${
                               i < progress.perfectStreak
                                 ? "bg-garden-success text-primary-foreground scale-110"
                                 : "bg-muted text-muted-foreground"

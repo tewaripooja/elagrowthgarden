@@ -5,7 +5,7 @@ export type ActivityMode = "vocabulary" | "compare-contrast" | "fact-opinion" | 
 
 const STAGES: PlantStage[] = ["seed", "sprout", "leaves", "bud", "flower"];
 const STORAGE_KEY = "ela-garden-state";
-const PERFECT_STORIES_TO_LEVEL_UP = 5;
+const PERFECT_DAYS_TO_LEVEL_UP = 7;
 
 const ALL_ACTIVITIES: ActivityMode[] = ["vocabulary", "compare-contrast", "fact-opinion", "summaries", "character-traits"];
 
@@ -20,7 +20,8 @@ export interface StoryRecord {
 
 export interface ActivityProgress {
   level: number;
-  perfectStreak: number;
+  perfectStreak: number; // consecutive days with 100% accuracy
+  lastPerfectDate: string | null; // ISO date string (YYYY-MM-DD) of last perfect day
 }
 
 export interface GameState {
