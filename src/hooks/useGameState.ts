@@ -39,7 +39,7 @@ export interface GameState {
 function defaultActivityLevels(baseLevel: number): Record<string, ActivityProgress> {
   const levels: Record<string, ActivityProgress> = {};
   ALL_ACTIVITIES.forEach((a) => {
-    levels[a] = { level: baseLevel, perfectStreak: 0 };
+    levels[a] = { level: baseLevel, perfectStreak: 0, lastPerfectDate: null };
   });
   return levels;
 }
