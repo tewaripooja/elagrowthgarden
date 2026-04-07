@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 
 interface Props {
   data: CompareContrastData;
+  mainStory: string;
   onCorrect: () => void;
 }
 
-export default function CompareContrast({ data, onCorrect }: Props) {
+export default function CompareContrast({ data, mainStory, onCorrect }: Props) {
   const [similarities, setSimilarities] = useState("");
   const [differences, setDifferences] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -22,15 +23,9 @@ export default function CompareContrast({ data, onCorrect }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-card rounded-2xl p-5 border border-border shadow-sm">
-          <h3 className="font-heading text-lg mb-3 text-garden-blue">📖 Story 1</h3>
-          <p className="font-body text-sm leading-relaxed text-foreground">{data.story1}</p>
-        </div>
-        <div className="bg-card rounded-2xl p-5 border border-border shadow-sm">
-          <h3 className="font-heading text-lg mb-3 text-garden-purple">📖 Story 2</h3>
-          <p className="font-body text-sm leading-relaxed text-foreground">{data.story2}</p>
-        </div>
+      <div className="bg-card rounded-2xl p-5 border border-border shadow-sm">
+        <h3 className="font-heading text-lg mb-3 text-garden-purple">📖 Story 2 (Compare with the main story above)</h3>
+        <p className="font-body text-sm leading-relaxed text-foreground">{data.story2}</p>
       </div>
 
       <div className="bg-card rounded-2xl p-5 border border-border">

@@ -27,43 +27,36 @@ export default function FactOpinion({ data, onCorrect }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
-        <h3 className="font-heading text-lg mb-3 text-foreground">📖 Read the Story</h3>
-        <p className="font-body text-base leading-relaxed text-foreground">{data.story}</p>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="font-heading text-lg text-foreground">🔍 Fact or Opinion?</h3>
-        {data.statements.map((s, i) => (
-          <div key={i} className="bg-card rounded-xl p-4 border border-border">
-            <p className="font-body text-sm mb-3 text-foreground">"{s.text}"</p>
-            <div className="flex gap-3">
-              <Button
-                variant={answers[i] === "fact" ? (checked[i] ? "default" : "destructive") : "outline"}
-                onClick={() => handleSelect(i, "fact")}
-                disabled={checked[i] !== null}
-                className="rounded-xl font-heading flex-1"
-              >
-                📋 Fact
-              </Button>
-              <Button
-                variant={answers[i] === "opinion" ? (checked[i] ? "default" : "destructive") : "outline"}
-                onClick={() => handleSelect(i, "opinion")}
-                disabled={checked[i] !== null}
-                className="rounded-xl font-heading flex-1"
-              >
-                💭 Opinion
-              </Button>
-            </div>
-            {checked[i] !== null && (
-              <p className={`mt-2 text-sm font-body ${checked[i] ? "text-primary" : "text-destructive"}`}>
-                {checked[i] ? "Correct! 🌟" : `This is a ${s.type}. Keep trying!`}
-              </p>
-            )}
+    <div className="space-y-4">
+      <h3 className="font-heading text-lg text-foreground">🔍 Fact or Opinion?</h3>
+      {data.statements.map((s, i) => (
+        <div key={i} className="bg-card rounded-xl p-4 border border-border">
+          <p className="font-body text-sm mb-3 text-foreground">"{s.text}"</p>
+          <div className="flex gap-3">
+            <Button
+              variant={answers[i] === "fact" ? (checked[i] ? "default" : "destructive") : "outline"}
+              onClick={() => handleSelect(i, "fact")}
+              disabled={checked[i] !== null}
+              className="rounded-xl font-heading flex-1"
+            >
+              📋 Fact
+            </Button>
+            <Button
+              variant={answers[i] === "opinion" ? (checked[i] ? "default" : "destructive") : "outline"}
+              onClick={() => handleSelect(i, "opinion")}
+              disabled={checked[i] !== null}
+              className="rounded-xl font-heading flex-1"
+            >
+              💭 Opinion
+            </Button>
           </div>
-        ))}
-      </div>
+          {checked[i] !== null && (
+            <p className={`mt-2 text-sm font-body ${checked[i] ? "text-primary" : "text-destructive"}`}>
+              {checked[i] ? "Correct! 🌟" : `This is a ${s.type}. Keep trying!`}
+            </p>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
