@@ -27,44 +27,37 @@ export default function CharacterTraits({ data, onCorrect }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
-        <h3 className="font-heading text-lg mb-3 text-foreground">📖 Read the Story</h3>
-        <p className="font-body text-base leading-relaxed text-foreground">{data.story}</p>
-      </div>
+    <div className="space-y-5">
+      <h3 className="font-heading text-lg text-foreground">🧑 Character Traits</h3>
+      {data.questions.map((q, qi) => (
+        <div key={qi} className="bg-card rounded-xl p-4 border border-border">
+          <p className="font-heading text-sm mb-3 text-foreground">{q.question}</p>
+          <div className="grid grid-cols-1 gap-2">
+            {q.options.map((opt, oi) => {
+              let variant: "outline" | "default" | "destructive" = "outline";
+              if (answers[qi] === oi) variant = checked[qi] ? "default" : "destructive";
+              else if (checked[qi] !== null && oi === q.correctIndex) variant = "default";
 
-      <div className="space-y-5">
-        <h3 className="font-heading text-lg text-foreground">🧑 Character Traits</h3>
-        {data.questions.map((q, qi) => (
-          <div key={qi} className="bg-card rounded-xl p-4 border border-border">
-            <p className="font-heading text-sm mb-3 text-foreground">{q.question}</p>
-            <div className="grid grid-cols-1 gap-2">
-              {q.options.map((opt, oi) => {
-                let variant: "outline" | "default" | "destructive" = "outline";
-                if (answers[qi] === oi) variant = checked[qi] ? "default" : "destructive";
-                else if (checked[qi] !== null && oi === q.correctIndex) variant = "default";
-
-                return (
-                  <Button
-                    key={oi}
-                    variant={variant}
-                    onClick={() => handleSelect(qi, oi)}
-                    disabled={checked[qi] !== null}
-                    className="rounded-xl font-body text-left justify-start h-auto py-3"
-                  >
-                    {opt}
-                  </Button>
-                );
-              })}
-            </div>
-            {checked[qi] !== null && (
-              <p className={`mt-2 text-sm font-body ${checked[qi] ? "text-primary" : "text-destructive"}`}>
-                {checked[qi] ? "You got it! 🌟" : `The answer is: ${q.options[q.correctIndex]}`}
-              </p>
-            )}
+              return (
+                <Button
+                  key={oi}
+                  variant={variant}
+                  onClick={() => handleSelect(qi, oi)}
+                  disabled={checked[qi] !== null}
+                  className="rounded-xl font-body text-left justify-start h-auto py-3"
+                >
+                  {opt}
+                </Button>
+              );
+            })}
           </div>
-        ))}
-      </div>
+          {checked[qi] !== null && (
+            <p className={`mt-2 text-sm font-body ${checked[qi] ? "text-primary" : "text-destructive"}`}>
+              {checked[qi] ? "You got it! 🌟" : `The answer is: ${q.options[q.correctIndex]}`}
+            </p>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
