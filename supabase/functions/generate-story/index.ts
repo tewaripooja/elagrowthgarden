@@ -5,32 +5,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const PROMPTS: Record<string, (level: number) => string> = {
-  vocabulary: (level) => `You are a children's story writer for grade ${level} readers (ages 7-10). Generate a fun, engaging story of about 200 words. Then pick 5 challenging but grade-appropriate vocabulary words from the story. For each word, provide the correct meaning and 2 plausible but incorrect meanings as distractors. Also provide the index (0-based) of the correct option.
+function buildPrompt(level: number): string {
+  return `You are a children's story writer for grade ${level} readers (ages 7-10). Generate a fun, engaging story of about 200-250 words. Give the story a creative title and a genre (e.g. Adventure, Fantasy, Mystery, Sci-Fi, Fairy Tale, Humor, Animal Story, Friendship, etc.).
+
+Then create ALL of the following activities based on that SINGLE story:
+
+1. VOCABULARY: Pick 5 challenging but grade-appropriate vocabulary words from the story. For each word, provide the correct meaning and 2 plausible but incorrect meanings. Also provide the 0-based index of the correct option.
+
+2. FACT vs OPINION: Create 5 statements related to the story - some facts and some opinions.
+
+3. SUMMARIES: Provide 3 possible summaries - only one should be the best/correct summary, the others should be too detailed, too vague, or slightly inaccurate.
+
+4. CHARACTER TRAITS: Ask 3 multiple-choice questions about the main character's traits. Each question should have 3 options with the 0-based index of the correct answer.
+
+5. COMPARE & CONTRAST: Write a SECOND short story (about 100 words) that shares some similarities with the first but also has clear differences. Then write one comparing question and a sample answer.
 
 Return ONLY valid JSON in this exact format:
-{"story":"...","words":[{"word":"...","options":["correct meaning","wrong meaning 1","wrong meaning 2"],"correctIndex":0},{"word":"...","options":["wrong meaning","correct meaning","wrong meaning"],"correctIndex":1},{"word":"...","options":["wrong","wrong","correct"],"correctIndex":2},{"word":"...","options":["correct","wrong","wrong"],"correctIndex":0},{"word":"...","options":["wrong","correct","wrong"],"correctIndex":1}]}`,
-
-  "compare-contrast": (level) => `You are a children's story writer for grade ${level} readers. Generate 2 short stories (about 100 words each) that share some similarities but also have clear differences. Then write one comparing question and a sample answer.
-
-Return ONLY valid JSON:
-{"story1":"...","story2":"...","question":"...","sampleAnswer":"..."}`,
-
-  "fact-opinion": (level) => `You are a children's story writer for grade ${level} readers. Write a ~200 word story. Then create 5 statements related to the story - some facts and some opinions.
-
-Return ONLY valid JSON:
-{"story":"...","statements":[{"text":"...","type":"fact"},{"text":"...","type":"opinion"},{"text":"...","type":"fact"},{"text":"...","type":"opinion"},{"text":"...","type":"fact"}]}`,
-
-  summaries: (level) => `You are a children's story writer for grade ${level} readers. Write a ~200 word story. Then provide 3 possible summaries - only one should be the best/correct summary, the others should be too detailed, too vague, or slightly inaccurate.
-
-Return ONLY valid JSON:
-{"story":"...","options":[{"text":"...","correct":false},{"text":"...","correct":true},{"text":"...","correct":false}]}`,
-
-  "character-traits": (level) => `You are a children's story writer for grade ${level} readers. Write a ~200 word story with a clear main character who shows distinct personality traits. Then ask 3 multiple-choice questions about the character's traits. Each question should have 3 options.
-
-Return ONLY valid JSON:
-{"story":"...","questions":[{"question":"...","options":["...","...","..."],"correctIndex":0},{"question":"...","options":["...","...","..."],"correctIndex":1},{"question":"...","options":["...","...","..."],"correctIndex":2}]}`,
-};
+{"title":"...","genre":"...","story":"...","vocabulary":{"words":[{"word":"...","options":["correct","wrong1","wrong2"],"correctIndex":0},{"word":"...","options":["wrong","correct","wrong"],"correctIndex":1},{"word":"...","options":["wrong","wrong","correct"],"correctIndex":2},{"word":"...","options":["correct","wrong","wrong"],"correctIndex":0},{"word":"...","options":["wrong","correct","wrong"],"correctIndex":1}]},"factOpinion":{"statements":[{"text":"...","type":"fact"},{"text":"...","type":"opinion"},{"text":"...","type":"fact"},{"text":"...","type":"opinion"},{"text":"...","type":"fact"}]},"summaries":{"options":[{"text":"...","correct":false},{"text":"...","correct":true},{"text":"...","correct":false}]},"characterTraits":{"questions":[{"question":"...","options":["...","...","..."],"correctIndex":0},{"question":"...","options":["...","...","..."],"correctIndex":1},{"question":"...","options":["...","...","..."],"correctIndex":2}]},"compareContrast":{"story2":"...","question":"...","sampleAnswer":"..."}}`;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -38,12 +30,9 @@ serve(async (req) => {
   }
 
   try {
-    const { activityType, gradeLevel } = await req.json();
+    const { gradeLevel } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
-    const promptFn = PROMPTS[activityType];
-    if (!promptFn) throw new Error(`Unknown activity type: ${activityType}`);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -52,10 +41,10 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: promptFn(gradeLevel || 2) },
-          { role: "user", content: `Please generate a new ${activityType} activity for grade ${gradeLevel || 2} students. Make it fun and educational!` },
+          { role: "system", content: buildPrompt(gradeLevel || 2) },
+          { role: "user", content: `Please generate a new story with all activities for grade ${gradeLevel || 2} students. Make it fun and educational!` },
         ],
       }),
     });
@@ -81,7 +70,6 @@ serve(async (req) => {
     const aiData = await response.json();
     const content = aiData.choices?.[0]?.message?.content || "";
 
-    // Extract JSON from the response (handle markdown code blocks)
     const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
     const jsonStr = (jsonMatch[1] || content).trim();
 
