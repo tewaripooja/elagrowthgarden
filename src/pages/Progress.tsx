@@ -80,39 +80,24 @@ export default function Progress() {
             <h2 className="font-heading text-xl font-bold tracking-tight text-foreground mb-8">
               Grade Levels by Activity 🚀
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {ALL_ACTIVITIES.map((actType) => {
                 const progress = gameState.getActivityLevel(actType);
                 const stories = byActivity[actType] || [];
                 const perfect = stories.filter((r) => r.perfect).length;
+                const accuracy = stories.length > 0
+                  ? Math.round((stories.reduce((s, r) => s + r.correctAnswers, 0) / stories.reduce((s, r) => s + r.totalQuestions, 0)) * 100)
+                  : 0;
                 return (
-                  <div key={actType} className="p-4 rounded-2xl bg-muted/50">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-heading font-semibold text-foreground">
-                        {ACTIVITY_LABELS[actType]}
-                      </span>
-                      <span className="text-sm font-bold text-primary">
-                        Grade {progress.level}
-                        {progress.level >= 5 && " 🏆"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-1">
-                        {Array.from({ length: 7 }).map((_, i) => (
-                          <div
-                            key={i}
-                            className={`w-5 h-5 rounded-lg flex items-center justify-center text-xs transition-all ${
-                              i < progress.perfectStreak
-                                ? "bg-garden-success text-primary-foreground scale-110"
-                                : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {i < progress.perfectStreak ? "⭐" : (i + 1)}
-                          </div>
-                        ))}
-                      </div>
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        {stories.length} stories · {perfect} perfect
+                  <div key={actType} className="flex items-center justify-between p-3 rounded-2xl bg-muted/50">
+                    <span className="font-heading font-semibold text-foreground">
+                      {ACTIVITY_LABELS[actType]}
+                    </span>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className="text-muted-foreground">{stories.length} stories</span>
+                      <span className="text-muted-foreground">{accuracy}%</span>
+                      <span className="font-bold text-primary">
+                        Grade {progress.level}{progress.level >= 5 && " 🏆"}
                       </span>
                     </div>
                   </div>
