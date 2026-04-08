@@ -38,7 +38,7 @@ export default function Progress() {
     <DynamicSky>
       <div className="min-h-screen p-4 md:p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-3 mb-6 bg-card/90 backdrop-blur-sm rounded-2xl p-4 border border-border/40 shadow-sm">
             <Button
               variant="ghost"
               onClick={() => navigate("/")}
