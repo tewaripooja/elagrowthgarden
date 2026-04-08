@@ -1,12 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Sparkles, Trophy, BookA, GitCompareArrows, CheckCircle, FileText, Users } from "lucide-react";
+import { BookOpen, Sparkles, Trophy, BookA, GitCompareArrows, CheckCircle, FileText, Users, Book } from "lucide-react";
 import DynamicSky from "@/components/DynamicSky";
 
 const activities = [
-  { icon: BookA, label: "Vocabulary", emoji: "📚", color: "bg-primary" },
+  { icon: BookOpen, label: "Pick Your Read", emoji: "📖", color: "bg-primary" },
+  { icon: BookA, label: "Vocabulary", emoji: "📚", color: "bg-garden-info" },
   { icon: CheckCircle, label: "Fact vs Opinion", emoji: "✅", color: "bg-garden-success" },
-  { icon: FileText, label: "Summaries", emoji: "📝", color: "bg-garden-info" },
-  { icon: Users, label: "Character Traits", emoji: "🎭", color: "bg-accent" },
+  { icon: FileText, label: "Summaries", emoji: "📝", color: "bg-accent" },
+  { icon: Users, label: "Character Traits", emoji: "🎭", color: "bg-secondary" },
   { icon: GitCompareArrows, label: "Compare & Contrast", emoji: "🔀", color: "bg-garden-warning" },
 ];
 
@@ -30,36 +31,20 @@ export default function Index() {
           </p>
         </div>
 
-        {/* Main CTA */}
-        <div className="flex flex-col items-center gap-6 max-w-md w-full">
-          <button
-            onClick={() => navigate("/activity")}
-            className="bg-primary text-white clay-button rounded-3xl p-8
-              flex flex-col items-center gap-4 w-full shadow-lg hover:scale-105 transition-transform duration-200"
-          >
-            <BookOpen className="h-12 w-12" />
-            <span className="font-heading text-2xl font-bold tracking-tight">Start Reading 📖</span>
-            <span className="text-sm opacity-80 font-normal leading-relaxed">
-              Read a story, then practice all 5 activities below!
-            </span>
-          </button>
-        </div>
-
         {/* Activity Boxes */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-8 max-w-3xl w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-8 max-w-2xl w-full">
           {activities.map((a) => (
             <button
               key={a.label}
               onClick={() => navigate("/activity")}
-              className={`${a.color} text-white rounded-2xl p-4 flex flex-col items-center gap-2 shadow-md hover:scale-105 transition-transform duration-200 cursor-pointer`}
+              className={`${a.color} text-white rounded-2xl p-5 flex flex-col items-center justify-center gap-2 shadow-md hover:scale-105 transition-transform duration-200 cursor-pointer aspect-square`}
             >
-              <a.icon className="h-7 w-7" />
-              <span className="font-heading text-xs font-bold text-center leading-tight">{a.label}</span>
-              <span className="text-lg">{a.emoji}</span>
+              <a.icon className="h-8 w-8" />
+              <span className="font-heading text-sm font-bold text-center leading-tight">{a.label}</span>
+              <span className="text-xl">{a.emoji}</span>
             </button>
           ))}
         </div>
-
         <div className="flex flex-col items-center gap-4 mt-6">
           <button
             onClick={() => navigate("/progress")}
