@@ -3,12 +3,12 @@ import { BookOpen, Sparkles, Trophy, BookA, GitCompareArrows, CheckCircle, FileT
 import DynamicSky from "@/components/DynamicSky";
 
 const activities = [
-  { icon: BookOpen, label: "Pick Your Read", emoji: "📖", color: "bg-primary" },
-  { icon: BookA, label: "Vocabulary", emoji: "📚", color: "bg-garden-info" },
-  { icon: CheckCircle, label: "Fact vs Opinion", emoji: "✅", color: "bg-garden-success" },
-  { icon: FileText, label: "Summaries", emoji: "📝", color: "bg-accent" },
-  { icon: Users, label: "Character Traits", emoji: "🎭", color: "bg-secondary" },
-  { icon: GitCompareArrows, label: "Compare & Contrast", emoji: "🔀", color: "bg-garden-warning" },
+  { icon: BookOpen, label: "Pick Your Read", emoji: "📖", color: "bg-[hsl(199,92%,50%)]" },
+  { icon: BookA, label: "Vocabulary", emoji: "📚", color: "bg-[hsl(270,50%,55%)]" },
+  { icon: CheckCircle, label: "Fact vs Opinion", emoji: "✅", color: "bg-[hsl(140,65%,42%)]" },
+  { icon: FileText, label: "Summaries", emoji: "📝", color: "bg-[hsl(37,95%,50%)]" },
+  { icon: Users, label: "Character Traits", emoji: "🎭", color: "bg-[hsl(330,60%,55%)]" },
+  { icon: GitCompareArrows, label: "Compare & Contrast", emoji: "🔀", color: "bg-[hsl(45,95%,50%)]" },
 ];
 
 export default function Index() {
