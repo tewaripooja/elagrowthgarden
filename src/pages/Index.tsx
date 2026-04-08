@@ -39,9 +39,9 @@ export default function Index() {
               onClick={() => navigate("/activity")}
               className={`${a.color} text-white rounded-2xl p-5 flex flex-col items-center justify-center gap-2 shadow-md hover:scale-105 transition-transform duration-200 cursor-pointer aspect-square`}
             >
-              <a.icon className="h-8 w-8" />
-              <span className="font-heading text-sm font-bold text-center leading-tight">{a.label}</span>
-              <span className="text-xl">{a.emoji}</span>
+              <a.icon className="h-10 w-10" />
+              <span className="font-heading text-lg font-bold text-center leading-tight">{a.label}</span>
+              <span className="text-2xl">{a.emoji}</span>
             </button>
           ))}
         </div>
