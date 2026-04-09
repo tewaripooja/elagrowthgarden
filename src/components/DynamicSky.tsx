@@ -10,9 +10,9 @@ function getTimeOfDay(): TimeOfDay {
 }
 
 const SKY_COLORS: Record<TimeOfDay, string> = {
-  day: "linear-gradient(180deg, #87CEEB 0%, #B6E3F4 60%, #E8F4FD 100%)",
-  sunset: "linear-gradient(180deg, #FF9A76 0%, #FECDA6 40%, #FFF1D0 100%)",
-  night: "linear-gradient(180deg, #1A1A4E 0%, #2D2B55 50%, #3B3477 100%)",
+  day: "linear-gradient(180deg, #C9A0DC 0%, #E8D0F0 50%, #F5E6FA 100%)",
+  sunset: "linear-gradient(180deg, #D4648A 0%, #E8A0B8 40%, #F5D0E0 100%)",
+  night: "linear-gradient(180deg, #2A1040 0%, #3D1A5C 50%, #552080 100%)",
 };
 
 function SmilingSun() {
