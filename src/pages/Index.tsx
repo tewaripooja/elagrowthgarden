@@ -22,7 +22,7 @@ export default function Index() {
           <div className="inline-flex items-center gap-2 mb-4">
             <Sparkles className="h-8 w-8 text-accent" />
             <h1 className="font-heading text-5xl md:text-6xl font-bold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
-              The ELA Growth Garden
+              ELA Growth Garden
             </h1>
             <Sparkles className="h-8 w-8 text-accent" />
           </div>
