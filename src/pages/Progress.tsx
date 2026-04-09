@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import DynamicSky from "@/components/DynamicSky";
 import { ArrowLeft, Star, Trophy, Flower2, TrendingUp, BookOpen } from "lucide-react";
+import Garden from "@/components/Garden";
 import { Button } from "@/components/ui/button";
 import { useGameState, type StoryRecord } from "@/hooks/useGameState";
 
@@ -144,6 +145,18 @@ export default function Progress() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* My Garden */}
+          <div className="clay-card">
+            <h2 className="font-heading text-xl font-bold tracking-tight text-foreground mb-4">
+              My Garden 🌸
+            </h2>
+            <Garden
+              currentStage={gameState.currentStage}
+              flowers={gameState.flowers}
+              stars={gameState.stars}
+            />
           </div>
         </div>
       </div>
