@@ -4,7 +4,6 @@ import DynamicSky from "@/components/DynamicSky";
 import { ArrowLeft, Loader2, BookOpen, Pencil, Star, Trophy, Users, FileText, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import Garden from "@/components/Garden";
 import { useGameState, type ActivityMode } from "@/hooks/useGameState";
 import { generateCombinedStory, type CombinedStoryData, type ActivityType } from "@/lib/ai";
 import Vocabulary from "@/components/activities/Vocabulary";
