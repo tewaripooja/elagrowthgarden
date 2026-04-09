@@ -4,7 +4,6 @@ import DynamicSky from "@/components/DynamicSky";
 import { ArrowLeft, Loader2, BookOpen, Pencil, Star, Trophy, Users, FileText, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import Garden from "@/components/Garden";
 import { useGameState, type ActivityMode } from "@/hooks/useGameState";
 import { generateCombinedStory, type CombinedStoryData, type ActivityType } from "@/lib/ai";
 import Vocabulary from "@/components/activities/Vocabulary";
@@ -158,8 +157,7 @@ export default function Activity() {
           </p>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
-          <div className="flex-1 lg:w-2/3">
+        <div className="max-w-4xl mx-auto">
             {loading && (
               <div className="clay-card flex flex-col items-center justify-center min-h-[300px] p-8">
                 <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
@@ -297,15 +295,6 @@ export default function Activity() {
                 </div>
               </div>
             )}
-          </div>
-
-          <div className="lg:w-1/3 min-w-[280px]">
-            <Garden
-              currentStage={gameState.currentStage}
-              flowers={gameState.flowers}
-              stars={gameState.stars}
-            />
-          </div>
         </div>
       </div>
     </DynamicSky>
