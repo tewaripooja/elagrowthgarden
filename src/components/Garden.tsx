@@ -6,116 +6,147 @@ interface GardenProps {
   stars: number;
 }
 
-function PlantSVG({ stage }: { stage: PlantStage }) {
+const STAGE_SCALE: Record<PlantStage, number> = {
+  seed: 0.38,
+  sprout: 0.52,
+  leaves: 0.68,
+  bud: 0.84,
+  flower: 1,
+};
+
+const FLOWER_HUES = [330, 280, 45, 200, 350, 25, 310, 160];
+
+/** Mini blossom for the tree canopy — one per flower earned (capped for perf). */
+function TreeFlowerBlossom({ hue, delay }: { hue: number; delay: number }) {
   return (
-    <div className="flex flex-col items-center justify-end h-48 relative">
-      {stage === "flower" && (
-        <div className="animate-bloom mb-[-4px]">
-          <svg width="60" height="60" viewBox="0 0 60 60">
-            {[0, 60, 120, 180, 240, 300].map((angle) => (
-              <ellipse key={angle} cx="30" cy="30" rx="12" ry="20" fill="hsl(330, 60%, 65%)" transform={`rotate(${angle}, 30, 30)`} opacity="0.85" />
-            ))}
-            <circle cx="30" cy="30" r="8" fill="hsl(45, 95%, 60%)" />
-          </svg>
-        </div>
-      )}
-      {stage === "bud" && (
-        <div className="animate-bounce-in mb-[-4px]">
-          <svg width="40" height="40" viewBox="0 0 40 40">
-            <ellipse cx="20" cy="25" rx="10" ry="14" fill="hsl(142, 50%, 50%)" />
-            <ellipse cx="14" cy="22" rx="8" ry="12" fill="hsl(142, 45%, 55%)" transform="rotate(-15, 14, 22)" />
-            <ellipse cx="26" cy="22" rx="8" ry="12" fill="hsl(142, 45%, 55%)" transform="rotate(15, 26, 22)" />
-          </svg>
-        </div>
-      )}
-      {(stage === "leaves" || stage === "bud" || stage === "flower") && (
-        <div className={`animate-sway ${stage === "leaves" ? "" : "mt-[-8px]"}`}>
-          <svg width="70" height="40" viewBox="0 0 70 40">
-            <path d="M35 35 Q15 20 10 10 Q25 15 35 30" fill="hsl(142, 55%, 45%)" />
-            <path d="M35 35 Q55 20 60 10 Q45 15 35 30" fill="hsl(142, 50%, 50%)" />
-          </svg>
-        </div>
-      )}
-      {stage !== "seed" && (
-        <div className="animate-grow-up">
-          <svg width="10" height={stage === "sprout" ? "30" : "50"} viewBox={`0 0 10 ${stage === "sprout" ? 30 : 50}`}>
-            <rect x="3" y="0" width="4" height={stage === "sprout" ? 30 : 50} rx="2" fill="hsl(142, 40%, 40%)" />
-          </svg>
-        </div>
-      )}
-      {stage === "sprout" && (
-        <div className="animate-sway mt-[-12px]">
-          <svg width="30" height="20" viewBox="0 0 30 20">
-            <path d="M15 18 Q5 10 8 2 Q12 8 15 15" fill="hsl(142, 55%, 50%)" />
-            <path d="M15 18 Q25 10 22 2 Q18 8 15 15" fill="hsl(142, 50%, 55%)" />
-          </svg>
-        </div>
-      )}
-      {stage === "seed" && (
-        <div className="animate-bounce-in">
-          <svg width="24" height="24" viewBox="0 0 24 24">
-            <ellipse cx="12" cy="14" rx="8" ry="6" fill="hsl(30, 50%, 45%)" />
-            <ellipse cx="12" cy="12" rx="6" ry="4" fill="hsl(30, 45%, 55%)" />
-          </svg>
-        </div>
-      )}
-    </div>
+    <g className="animate-bloom" style={{ animationDelay: `${delay}s` }}>
+      {[0, 60, 120, 180, 240, 300].map((angle) => (
+        <ellipse
+          key={angle}
+          cx="0"
+          cy="0"
+          rx="5"
+          ry="8"
+          fill={`hsl(${hue} 70% 62%)`}
+          transform={`rotate(${angle} 0 0)`}
+          opacity={0.9}
+        />
+      ))}
+      <circle cx="0" cy="0" r="4" fill={`hsl(${hue} 90% 45%)`} />
+    </g>
   );
 }
 
-function CompletedFlower({ index }: { index: number }) {
-  const hues = [330, 270, 200, 25, 45, 350];
-  const hue = hues[index % hues.length];
-  return (
-    <div className="animate-bloom" style={{ animationDelay: `${index * 0.1}s` }}>
-      <svg width="36" height="50" viewBox="0 0 36 50">
-        <rect x="16" y="25" width="4" height="25" rx="2" fill="hsl(142, 40%, 40%)" />
-        <path d="M18 30 Q8 25 6 18 Q12 22 18 28" fill="hsl(142, 50%, 50%)" />
-        {[0, 72, 144, 216, 288].map((angle) => (
-          <ellipse key={angle} cx="18" cy="15" rx="6" ry="10" fill={`hsl(${hue}, 60%, 65%)`} transform={`rotate(${angle}, 18, 15)`} opacity="0.8" />
-        ))}
-        <circle cx="18" cy="15" r="5" fill="hsl(45, 90%, 60%)" />
-      </svg>
-    </div>
-  );
+function flowerPositions(count: number, cx: number, cy: number, baseR: number): { x: number; y: number }[] {
+  const maxShow = Math.min(count, 48);
+  const out: { x: number; y: number }[] = [];
+  for (let i = 0; i < maxShow; i++) {
+    const angle = (i * 137.508 * Math.PI) / 180;
+    const r = baseR + (i % 4) * 3 + (i % 7) * 0.5;
+    out.push({
+      x: cx + r * Math.cos(angle),
+      y: cy + r * Math.sin(angle) * 0.78,
+    });
+  }
+  return out;
 }
 
 function StarDisplay({ count }: { count: number }) {
   const starStyles = ["⭐", "🌟", "✨", "💫", "⭐"];
+  const n = Math.min(count, 20);
   return (
-    <div className="flex flex-wrap gap-1 justify-center mb-2">
-      {Array.from({ length: count }).map((_, i) => (
-        <span key={i} className="text-lg animate-star-pop" style={{ animationDelay: `${i * 0.05}s` }}>
+    <div className="flex flex-wrap gap-1 justify-center px-2 pb-1">
+      {Array.from({ length: n }).map((_, i) => (
+        <span key={i} className="text-base animate-star-pop" style={{ animationDelay: `${i * 0.04}s` }}>
           {starStyles[i % starStyles.length]}
         </span>
       ))}
+      {count > 20 && <span className="text-xs text-violet-800/80 self-center font-medium">+{count - 20}</span>}
     </div>
   );
 }
 
 export default function Garden({ currentStage, flowers, stars }: GardenProps) {
+  const scale = STAGE_SCALE[currentStage];
+  const cx = 120;
+  const cy = 100;
+  const spread = 28 + Math.min(flowers, 24) * 0.4;
+  const positions = flowerPositions(flowers, cx, cy, spread);
+
   return (
-    <div className="clay-card p-5 h-full flex flex-col">
-      <h2 className="font-heading text-xl text-center mb-2 text-foreground">🌱 My Garden</h2>
-
-      {stars > 0 && <StarDisplay count={stars} />}
-
-      <div className="flex-1 flex flex-col items-center justify-end mb-4">
-        <PlantSVG stage={currentStage} />
-        <div className="w-32 h-6 bg-garden-dirt rounded-t-full mt-[-2px]" />
-        <p className="text-sm text-muted-foreground mt-2 capitalize">{currentStage}</p>
-      </div>
-
-      {flowers > 0 && (
-        <div className="border-t border-border pt-3">
-          <p className="text-xs text-muted-foreground text-center mb-2">Bloomed: {flowers} 🌸</p>
-          <div className="flex flex-wrap gap-1 justify-center">
-            {Array.from({ length: Math.min(flowers, 12) }).map((_, i) => (
-              <CompletedFlower key={i} index={i} />
-            ))}
-          </div>
+    <div className="rounded-2xl overflow-hidden border-2 border-emerald-200/80 shadow-inner bg-gradient-to-b from-sky-200/90 via-sky-100/70 to-emerald-100/50">
+      {stars > 0 && (
+        <div className="pt-3 pb-1 border-b border-white/40 bg-white/20">
+          <p className="text-center text-xs font-heading text-violet-900/70 mb-1">Stars earned</p>
+          <StarDisplay count={stars} />
         </div>
       )}
+
+      <div className="relative min-h-[260px] md:min-h-[300px] px-2 pb-3">
+        {/* Sky accents */}
+        <div className="pointer-events-none absolute top-3 left-6 w-14 h-8 rounded-full bg-white/70 blur-[1px]" aria-hidden />
+        <div className="pointer-events-none absolute top-8 right-10 w-20 h-10 rounded-full bg-white/60 blur-[1px]" aria-hidden />
+        <div
+          className="pointer-events-none absolute top-4 right-16 w-8 h-8 rounded-full bg-amber-200/90 shadow-[0_0_20px_rgba(253,224,71,0.7)]"
+          aria-hidden
+        />
+
+        {/* Tree + garden ground */}
+        <div className="flex flex-col items-center justify-end h-full min-h-[240px] pt-4">
+          <svg
+            viewBox="0 0 240 260"
+            className="w-full max-w-[min(100%,380px)] h-auto drop-shadow-[0_8px_16px_rgba(22,101,52,0.25)]"
+            style={{ transform: `scale(${scale})`, transformOrigin: "bottom center" }}
+            aria-label={`Garden tree, growth stage ${currentStage}`}
+          >
+            <title>Your garden tree</title>
+            {/* Grass mound */}
+            <ellipse cx="120" cy="248" rx="118" ry="22" fill="hsl(142 48% 38%)" opacity={0.9} />
+            <ellipse cx="120" cy="245" rx="100" ry="16" fill="hsl(100 45% 48%)" opacity={0.85} />
+            <ellipse cx="120" cy="242" rx="85" ry="12" fill="hsl(88 50% 55%)" />
+
+            {/* Trunk */}
+            <rect x="112" y="138" width="16" height="112" rx="5" fill="hsl(28 42% 30%)" />
+            <rect x="114" y="140" width="5" height="108" rx="2" fill="hsl(28 32% 40%)" opacity={0.45} />
+
+            {/* Foliage + earned flowers (sway together) */}
+            <g className="animate-sway" style={{ transformOrigin: "120px 150px" }}>
+              <circle cx="120" cy="105" r="48" fill="hsl(142 52% 38%)" />
+              <circle cx="88" cy="118" r="38" fill="hsl(145 48% 42%)" />
+              <circle cx="152" cy="118" r="38" fill="hsl(140 50% 40%)" />
+              <circle cx="120" cy="78" r="36" fill="hsl(138 55% 36%)" />
+              <ellipse cx="120" cy="108" rx="42" ry="32" fill="hsl(142 45% 44%)" opacity={0.6} />
+              {positions.map((pos, i) => (
+                <g key={i} transform={`translate(${pos.x}, ${pos.y})`}>
+                  <TreeFlowerBlossom hue={FLOWER_HUES[i % FLOWER_HUES.length]} delay={i * 0.03} />
+                </g>
+              ))}
+            </g>
+
+            {/* Stage hint: tiny sprout when seed */}
+            {currentStage === "seed" && (
+              <ellipse cx="120" cy="238" rx="6" ry="4" fill="hsl(30 50% 35%)" opacity={0.8} />
+            )}
+          </svg>
+
+          <p className="text-center text-sm font-heading text-emerald-950/90 mt-1 px-2">
+            {flowers === 0 ? (
+              <>
+                Your tree is ready — earn <span className="text-fuchsia-700">flowers</span> by completing activities!
+              </>
+            ) : (
+              <>
+                <span className="text-fuchsia-700 font-bold">{flowers}</span> flower{flowers !== 1 ? "s" : ""} blooming
+                on your tree
+                {flowers > 48 && (
+                  <span className="text-violet-800/80"> (showing 48 of {flowers})</span>
+                )}
+              </>
+            )}
+          </p>
+          <p className="text-xs text-violet-900/60 capitalize mt-0.5">Growth: {currentStage}</p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,17 +1,29 @@
-import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import DynamicSky from "@/components/DynamicSky";
-import { ArrowLeft, Loader2, BookOpen, Pencil, Star, Trophy, Users, FileText, Scale } from "lucide-react";
+import { ArrowLeft, BookOpen, LogOut, Pencil, Star, Users, FileText, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useGameState, type ActivityMode } from "@/hooks/useGameState";
-import { generateCombinedStory, type CombinedStoryData, type ActivityType } from "@/lib/ai";
+import { useAuth } from "@/contexts/AuthContext";
+import { useGameState } from "@/hooks/useGameState";
+import type { CombinedStoryData, ActivityType } from "@/lib/ai";
+import { STORY_GENRES } from "@/lib/storyGenres";
+import { pickSampleStory } from "@/lib/pickSampleStory";
 import Vocabulary from "@/components/activities/Vocabulary";
 import CompareContrast from "@/components/activities/CompareContrast";
 import FactOpinion from "@/components/activities/FactOpinion";
 import Summaries from "@/components/activities/Summaries";
 import CharacterTraits from "@/components/activities/CharacterTraits";
-import { toast } from "sonner";
+import { PAGE_SHELL_GRADIENT } from "@/lib/pageTheme";
+import { cn } from "@/lib/utils";
 
 const ACTIVITY_TABS: { id: ActivityType; label: string; icon: React.ReactNode }[] = [
   { id: "vocabulary", label: "Vocabulary", icon: <BookOpen className="h-4 w-4" /> },
@@ -32,11 +44,41 @@ function getQuestionCount(activityType: ActivityType, data: CombinedStoryData): 
   return 1;
 }
 
+function isFullStoryPerfect(
+  storyData: CombinedStoryData,
+  completed: Record<string, boolean>,
+  correct: Record<string, number>,
+): boolean {
+  return ACTIVITY_TABS.every((t) => {
+    if (!completed[t.id]) return false;
+    const total = getQuestionCount(t.id, storyData);
+    const c = correct[t.id] ?? 0;
+    return total > 0 && c === total;
+  });
+}
+
 export default function Activity() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { signOut } = useAuth();
   const gameState = useGameState();
+
+  const locationState = (location.state ?? null) as {
+    activityTab?: ActivityType;
+    fromReading?: boolean;
+  } | null;
+  /** Home "Reading" tile — show every activity tab. Any other tile — one activity first, then remaining only. */
+  const fromReadingHome = Boolean(locationState?.fromReading);
+  const entryActivityTab: ActivityType | null =
+    fromReadingHome
+      ? null
+      : locationState?.activityTab &&
+          ACTIVITY_TABS.some((t) => t.id === locationState.activityTab)
+        ? locationState.activityTab
+        : null;
+
   const [data, setData] = useState<CombinedStoryData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const lastStoryTitleRef = useRef<string | null>(null);
   const [round, setRound] = useState(0);
   const [recentStar, setRecentStar] = useState(false);
   const [activeTab, setActiveTab] = useState<ActivityType>("vocabulary");
@@ -44,46 +86,50 @@ export default function Activity() {
   // Track correct counts and completion per activity type per round
   const [correctCounts, setCorrectCounts] = useState<Record<string, number>>({});
   const [completedActivities, setCompletedActivities] = useState<Record<string, boolean>>({});
-  const [levelUpMessages, setLevelUpMessages] = useState<Record<string, string>>({});
+  const [perfectStoryLogoutOpen, setPerfectStoryLogoutOpen] = useState(false);
+  const perfectLogoutPromptRoundRef = useRef<number | null>(null);
+
+  /** Which activity tabs appear in the bar: Reading = all; other home tiles = chosen only until done, then incomplete only. */
+  const visibleActivityIds = useMemo(() => {
+    if (!data) return [];
+    if (fromReadingHome || !entryActivityTab) {
+      return ACTIVITY_TABS.map((t) => t.id);
+    }
+    if (!completedActivities[entryActivityTab]) {
+      return [entryActivityTab];
+    }
+    return ACTIVITY_TABS.map((t) => t.id).filter((id) => !completedActivities[id]);
+  }, [data, fromReadingHome, entryActivityTab, completedActivities]);
 
   const progressPercent = (gameState.stageIndex / STAGES_COUNT) * 100;
 
-  // Use the minimum grade across activities for generating content
-  const minGrade = Math.min(
-    ...ACTIVITY_TABS.map((t) => gameState.getActivityLevel(t.id).level)
-  );
-
-  const loadContent = async () => {
-    setLoading(true);
-    setData(null);
+  const loadContent = (genreLabel: string) => {
+    perfectLogoutPromptRoundRef.current = null;
+    setPerfectStoryLogoutOpen(false);
     setCorrectCounts({});
     setCompletedActivities({});
-    setLevelUpMessages({});
-    setActiveTab("vocabulary");
-    try {
-      const result = await generateCombinedStory(minGrade);
-      setData(result);
-      setRound((r) => r + 1);
-    } catch (e) {
-      toast.error("Couldn't load the story. Please try again!");
-      console.error(e);
-    } finally {
-      setLoading(false);
+    const result = pickSampleStory(genreLabel, lastStoryTitleRef.current);
+    lastStoryTitleRef.current = result.title;
+    setData(result);
+    setRound((r) => r + 1);
+    if (entryActivityTab && ACTIVITY_TABS.some((t) => t.id === entryActivityTab)) {
+      setActiveTab(entryActivityTab);
+    } else {
+      setActiveTab("vocabulary");
     }
   };
 
-  useEffect(() => {
-    loadContent();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const handleNextStory = () => {
+    perfectLogoutPromptRoundRef.current = null;
+    setPerfectStoryLogoutOpen(false);
+    setData(null);
+    setCorrectCounts({});
+    setCompletedActivities({});
+  };
 
-  const handleCorrect = useCallback((activityType: ActivityType, earnStar = false) => {
-    gameState.handleCorrectAnswer(earnStar);
+  const handleCorrect = useCallback((activityType: ActivityType) => {
+    gameState.handleCorrectAnswer();
     setCorrectCounts((prev) => ({ ...prev, [activityType]: (prev[activityType] || 0) + 1 }));
-    if (earnStar) {
-      setRecentStar(true);
-      setTimeout(() => setRecentStar(false), 2000);
-    }
   }, [gameState]);
 
   const handleCompleteActivity = useCallback((activityType: ActivityType) => {
@@ -92,25 +138,34 @@ export default function Activity() {
 
     const totalQ = getQuestionCount(activityType, data);
     const correct = correctCounts[activityType] || 0;
-    const prevLevel = gameState.getActivityLevel(activityType).level;
-    gameState.completeStory(activityType, totalQ, correct);
+    const perfect = totalQ > 0 && correct === totalQ;
+    const starBlockedForReadingVocab = fromReadingHome && activityType === "vocabulary";
+    if (perfect && !starBlockedForReadingVocab) {
+      gameState.awardPerfectActivity();
+      setRecentStar(true);
+      setTimeout(() => setRecentStar(false), 2000);
+    }
+    gameState.completeStory(activityType, totalQ, correct, `${data.title}::${round}`);
+  }, [completedActivities, data, correctCounts, gameState, fromReadingHome, round]);
 
-    setTimeout(() => {
-      const savedState = localStorage.getItem("ela-garden-state");
-      if (savedState) {
-        const parsed = JSON.parse(savedState);
-        const newLevel = parsed.activityLevels?.[activityType]?.level || prevLevel;
-        if (newLevel > prevLevel) {
-          const label = ACTIVITY_TABS.find((t) => t.id === activityType)?.label || activityType;
-          setLevelUpMessages((prev) => ({
-            ...prev,
-            [activityType]: `🎉 Amazing! ${label} leveled up to Grade ${newLevel}!`,
-          }));
-          toast.success(`🎉 Level Up! ${label} is now Grade ${newLevel}!`);
-        }
-      }
-    }, 100);
-  }, [completedActivities, data, correctCounts, gameState]);
+  useEffect(() => {
+    if (visibleActivityIds.length === 0 || visibleActivityIds.includes(activeTab)) return;
+    setActiveTab(visibleActivityIds[0]);
+  }, [visibleActivityIds, activeTab]);
+
+  useEffect(() => {
+    if (!data) return;
+    if (!isFullStoryPerfect(data, completedActivities, correctCounts)) return;
+    if (perfectLogoutPromptRoundRef.current === round) return;
+    perfectLogoutPromptRoundRef.current = round;
+    setPerfectStoryLogoutOpen(true);
+  }, [data, completedActivities, correctCounts, round]);
+
+  const handleLogoutFromPerfectStory = useCallback(async () => {
+    setPerfectStoryLogoutOpen(false);
+    await signOut();
+    navigate("/login");
+  }, [navigate, signOut]);
 
   const highlightWords = (story: string, words: { word: string }[]) => {
     let result = story;
@@ -123,52 +178,105 @@ export default function Activity() {
 
   return (
     <DynamicSky>
-      <div className="min-h-screen p-4 md:p-6">
-        <div className="max-w-7xl mx-auto mb-4 bg-card/90 backdrop-blur-sm rounded-2xl p-4 border border-border/40 shadow-sm">
-          <div className="flex items-center gap-3 mb-3">
+      <Dialog open={perfectStoryLogoutOpen} onOpenChange={setPerfectStoryLogoutOpen}>
+        <DialogContent className="font-heading sm:rounded-2xl border-2 border-emerald-200/80 bg-card/95 backdrop-blur-sm">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Perfect story</DialogTitle>
+            <DialogDescription className="text-base text-foreground/90 pt-1">
+              You answered every question correctly for all activities in this story. Please log out to end your session.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="font-heading rounded-xl"
+              onClick={() => setPerfectStoryLogoutOpen(false)}
+            >
+              Stay signed in
+            </Button>
+            <Button
+              type="button"
+              className="font-heading rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={() => void handleLogoutFromPerfectStory()}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Log out
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <div className={cn("min-h-screen w-full flex flex-col pb-8", PAGE_SHELL_GRADIENT)}>
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 pt-4 md:pt-6 pb-6 border-b border-white/25">
+          <div className="flex flex-wrap items-center gap-3 mb-4">
             <Button
               variant="ghost"
               onClick={() => navigate("/")}
-              className="clay-button min-h-[48px] rounded-2xl font-heading"
+              className="min-h-[48px] rounded-2xl font-heading bg-white/20 hover:bg-white/30 text-white border-0 shadow-none"
             >
               <ArrowLeft className="h-5 w-5 mr-1" /> Home
             </Button>
 
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-6 w-6" />
-              <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+            <div className="flex items-center gap-2 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]">
+              <BookOpen className="h-6 w-6 shrink-0" />
+              <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">
                 Story Time
               </h1>
             </div>
 
             <div className={`ml-auto star-badge ${recentStar ? "glowing" : ""}`}>
-              <Star className="h-6 w-6 text-primary-foreground fill-current" />
-              <span className="absolute -bottom-1 -right-1 bg-foreground text-background text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              <Star className="h-6 w-6 text-amber-100 fill-current drop-shadow-md" />
+              <span className="absolute -bottom-1 -right-1 bg-violet-950 text-amber-100 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                 {gameState.stars}
               </span>
             </div>
           </div>
 
-          <div className="progress-bar-track">
+          <div className="progress-bar-track bg-white/40">
             <div className="progress-bar-fill" style={{ width: `${progressPercent}%` }} />
           </div>
-          <p className="text-xs text-muted-foreground mt-1 text-right">
+          <p className="text-xs text-white/85 mt-2 text-right drop-shadow-sm">
             🌱 Growing: {gameState.currentStage} · 🌸 Flowers: {gameState.flowers}
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto">
-            {loading && (
-              <div className="clay-card flex flex-col items-center justify-center min-h-[300px] p-8">
-                <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-                <p className="font-heading text-lg text-muted-foreground">Writing your story... ✍️</p>
+        <div className="w-full max-w-4xl mx-auto px-4 md:px-6 flex-1 pt-6 md:pt-8">
+            {!data && (
+              <div className="w-full space-y-6 md:space-y-8 pb-4">
+                  <div className="flex justify-center gap-2 text-3xl drop-shadow-md" aria-hidden>
+                    <span>✨</span>
+                    <span>🌈</span>
+                    <span>✨</span>
+                  </div>
+                  <h2 className="font-heading text-3xl md:text-4xl font-extrabold text-center text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+                    Pick a story type
+                  </h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
+                    {STORY_GENRES.map((g) => (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => loadContent(g.label)}
+                        className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl p-4 text-center min-h-[128px] md:min-h-[140px] transition-all duration-200 hover:scale-[1.04] active:scale-[0.98] hover:-translate-y-0.5 ${g.tileClass}`}
+                      >
+                        <span className="text-4xl drop-shadow-sm" aria-hidden>
+                          {g.emoji}
+                        </span>
+                        <span className="font-heading text-sm md:text-base font-bold leading-tight drop-shadow-sm">
+                          {g.label}
+                        </span>
+                        <span className="text-[11px] md:text-xs font-medium opacity-85 leading-snug">{g.hint}</span>
+                      </button>
+                    ))}
+                  </div>
               </div>
             )}
 
-            {data && !loading && (
+            {data && (
               <div key={round}>
                 {/* Story Section - Always Visible */}
-                <div className="bg-card rounded-2xl p-6 border border-border shadow-sm mb-6">
+                <div className="bg-white/90 backdrop-blur-md rounded-2xl p-6 md:p-7 mb-6 shadow-sm border border-white/50">
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground">
@@ -189,12 +297,11 @@ export default function Activity() {
                   />
                 </div>
 
-                {/* Activity Tabs */}
-                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ActivityType)}>
-                  <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-card/80 p-2 rounded-xl border border-border mb-4">
-                    {ACTIVITY_TABS.map((tab) => {
-                      const progress = gameState.getActivityLevel(tab.id);
-                      return (
+                {/* Activity Tabs — non-Reading home: one activity until submitted, then remaining incomplete only */}
+                {visibleActivityIds.length > 0 ? (
+                  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ActivityType)}>
+                    <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-white/75 backdrop-blur-md p-2 rounded-xl border border-white/50 mb-4 shadow-sm">
+                      {ACTIVITY_TABS.filter((tab) => visibleActivityIds.includes(tab.id)).map((tab) => (
                         <TabsTrigger
                           key={tab.id}
                           value={tab.id}
@@ -202,92 +309,66 @@ export default function Activity() {
                         >
                           {tab.icon}
                           <span className="hidden sm:inline">{tab.label}</span>
-                          <span className="text-[10px] opacity-70">G{progress.level}</span>
                           {completedActivities[tab.id] && <span className="text-[10px]">✅</span>}
                         </TabsTrigger>
-                      );
-                    })}
-                  </TabsList>
+                      ))}
+                    </TabsList>
 
-                  <TabsContent value="vocabulary">
-                    <Vocabulary data={data.vocabulary} onCorrect={() => handleCorrect("vocabulary", true)} />
-                    {!completedActivities["vocabulary"] && (
-                      <button onClick={() => handleCompleteActivity("vocabulary")} className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading mt-4 w-full">
-                        Submit Vocabulary ✅
-                      </button>
-                    )}
-                    {levelUpMessages["vocabulary"] && (
-                      <div className="clay-card bg-garden-success/20 border-2 border-garden-success p-4 mt-4 text-center">
-                        <Trophy className="h-8 w-8 text-garden-success mx-auto mb-2" />
-                        <p className="font-heading text-lg text-foreground">{levelUpMessages["vocabulary"]}</p>
-                      </div>
-                    )}
-                  </TabsContent>
+                    <TabsContent value="vocabulary">
+                      <Vocabulary data={data.vocabulary} onCorrect={() => handleCorrect("vocabulary")} />
+                      {!completedActivities["vocabulary"] && (
+                        <button onClick={() => handleCompleteActivity("vocabulary")} className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading mt-4 w-full">
+                          Submit Vocabulary ✅
+                        </button>
+                      )}
+                    </TabsContent>
 
-                  <TabsContent value="fact-opinion">
-                    <FactOpinion data={data.factOpinion} onCorrect={() => handleCorrect("fact-opinion")} />
-                    {!completedActivities["fact-opinion"] && (
-                      <button onClick={() => handleCompleteActivity("fact-opinion")} className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading mt-4 w-full">
-                        Submit Fact vs Opinion ✅
-                      </button>
-                    )}
-                    {levelUpMessages["fact-opinion"] && (
-                      <div className="clay-card bg-garden-success/20 border-2 border-garden-success p-4 mt-4 text-center">
-                        <Trophy className="h-8 w-8 text-garden-success mx-auto mb-2" />
-                        <p className="font-heading text-lg text-foreground">{levelUpMessages["fact-opinion"]}</p>
-                      </div>
-                    )}
-                  </TabsContent>
+                    <TabsContent value="fact-opinion">
+                      <FactOpinion data={data.factOpinion} onCorrect={() => handleCorrect("fact-opinion")} />
+                      {!completedActivities["fact-opinion"] && (
+                        <button onClick={() => handleCompleteActivity("fact-opinion")} className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading mt-4 w-full">
+                          Submit Fact vs Opinion ✅
+                        </button>
+                      )}
+                    </TabsContent>
 
-                  <TabsContent value="summaries">
-                    <Summaries data={data.summaries} onCorrect={() => handleCorrect("summaries")} />
-                    {!completedActivities["summaries"] && (
-                      <button onClick={() => handleCompleteActivity("summaries")} className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading mt-4 w-full">
-                        Submit Summary ✅
-                      </button>
-                    )}
-                    {levelUpMessages["summaries"] && (
-                      <div className="clay-card bg-garden-success/20 border-2 border-garden-success p-4 mt-4 text-center">
-                        <Trophy className="h-8 w-8 text-garden-success mx-auto mb-2" />
-                        <p className="font-heading text-lg text-foreground">{levelUpMessages["summaries"]}</p>
-                      </div>
-                    )}
-                  </TabsContent>
+                    <TabsContent value="summaries">
+                      <Summaries data={data.summaries} onCorrect={() => handleCorrect("summaries")} />
+                      {!completedActivities["summaries"] && (
+                        <button onClick={() => handleCompleteActivity("summaries")} className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading mt-4 w-full">
+                          Submit Summary ✅
+                        </button>
+                      )}
+                    </TabsContent>
 
-                  <TabsContent value="character-traits">
-                    <CharacterTraits data={data.characterTraits} onCorrect={() => handleCorrect("character-traits")} />
-                    {!completedActivities["character-traits"] && (
-                      <button onClick={() => handleCompleteActivity("character-traits")} className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading mt-4 w-full">
-                        Submit Character Traits ✅
-                      </button>
-                    )}
-                    {levelUpMessages["character-traits"] && (
-                      <div className="clay-card bg-garden-success/20 border-2 border-garden-success p-4 mt-4 text-center">
-                        <Trophy className="h-8 w-8 text-garden-success mx-auto mb-2" />
-                        <p className="font-heading text-lg text-foreground">{levelUpMessages["character-traits"]}</p>
-                      </div>
-                    )}
-                  </TabsContent>
+                    <TabsContent value="character-traits">
+                      <CharacterTraits data={data.characterTraits} onCorrect={() => handleCorrect("character-traits")} />
+                      {!completedActivities["character-traits"] && (
+                        <button onClick={() => handleCompleteActivity("character-traits")} className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading mt-4 w-full">
+                          Submit Character Traits ✅
+                        </button>
+                      )}
+                    </TabsContent>
 
-                  <TabsContent value="compare-contrast">
-                    <CompareContrast data={data.compareContrast} mainStory={data.story} onCorrect={() => handleCorrect("compare-contrast")} />
-                    {!completedActivities["compare-contrast"] && (
-                      <button onClick={() => handleCompleteActivity("compare-contrast")} className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading mt-4 w-full">
-                        Submit Compare & Contrast ✅
-                      </button>
-                    )}
-                    {levelUpMessages["compare-contrast"] && (
-                      <div className="clay-card bg-garden-success/20 border-2 border-garden-success p-4 mt-4 text-center">
-                        <Trophy className="h-8 w-8 text-garden-success mx-auto mb-2" />
-                        <p className="font-heading text-lg text-foreground">{levelUpMessages["compare-contrast"]}</p>
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
+                    <TabsContent value="compare-contrast">
+                      <CompareContrast data={data.compareContrast} mainStory={data.story} onCorrect={() => handleCorrect("compare-contrast")} />
+                      {!completedActivities["compare-contrast"] && (
+                        <button onClick={() => handleCompleteActivity("compare-contrast")} className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading mt-4 w-full">
+                          Submit Compare & Contrast ✅
+                        </button>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                ) : (
+                  <p className="mb-4 text-center font-heading text-sm text-white drop-shadow-sm rounded-xl bg-white/20 px-4 py-3 border border-white/30">
+                    You finished every activity for this story — pick another story or go home.
+                  </p>
+                )}
 
                 <div className="mt-6 flex justify-center">
                   <button
-                    onClick={loadContent}
+                    type="button"
+                    onClick={handleNextStory}
                     className="clay-button bg-card text-foreground border border-border px-8 py-3 font-heading"
                   >
                     Next Story 📖

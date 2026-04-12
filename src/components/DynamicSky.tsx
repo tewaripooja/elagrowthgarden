@@ -15,51 +15,6 @@ const SKY_COLORS: Record<TimeOfDay, string> = {
   night: "linear-gradient(180deg, #2A1040 0%, #3D1A5C 50%, #552080 100%)",
 };
 
-function SmilingSun() {
-  return (
-    <div className="absolute top-6 right-8 animate-[sway_6s_ease-in-out_infinite]">
-      <svg width="80" height="80" viewBox="0 0 80 80">
-        {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-          <line
-            key={angle}
-            x1="40"
-            y1="40"
-            x2={40 + 38 * Math.cos((angle * Math.PI) / 180)}
-            y2={40 + 38 * Math.sin((angle * Math.PI) / 180)}
-            stroke="hsl(45, 100%, 60%)"
-            strokeWidth="3"
-            strokeLinecap="round"
-            opacity="0.7"
-          />
-        ))}
-        <circle cx="40" cy="40" r="22" fill="hsl(45, 95%, 60%)" />
-        <circle cx="40" cy="40" r="20" fill="hsl(45, 100%, 65%)" />
-        {/* Eyes */}
-        <circle cx="33" cy="36" r="3" fill="hsl(30, 40%, 30%)" />
-        <circle cx="47" cy="36" r="3" fill="hsl(30, 40%, 30%)" />
-        {/* Smile */}
-        <path d="M32 44 Q40 52 48 44" stroke="hsl(30, 40%, 30%)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      </svg>
-    </div>
-  );
-}
-
-function SunsetSun() {
-  return (
-    <div className="absolute bottom-20 right-10 opacity-80">
-      <svg width="90" height="50" viewBox="0 0 90 50">
-        <defs>
-          <linearGradient id="sunsetGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(35, 100%, 60%)" />
-            <stop offset="100%" stopColor="hsl(15, 90%, 55%)" />
-          </linearGradient>
-        </defs>
-        <ellipse cx="45" cy="45" rx="35" ry="35" fill="url(#sunsetGrad)" />
-      </svg>
-    </div>
-  );
-}
-
 interface Firefly {
   id: number;
   x: number;
@@ -151,8 +106,6 @@ export default function DynamicSky({ children }: { children: React.ReactNode }) 
     <div className="relative min-h-screen" style={{ transition: "background 2s ease-in-out", background: SKY_COLORS[timeOfDay] }}>
       {/* Sky elements */}
       <div className="absolute inset-0 pointer-events-none" style={{ transition: "opacity 2s ease-in-out" }}>
-        {timeOfDay === "day" && <SmilingSun />}
-        {timeOfDay === "sunset" && <SunsetSun />}
         {timeOfDay === "night" && <Fireflies />}
       </div>
 

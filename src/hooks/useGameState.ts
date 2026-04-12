@@ -10,6 +10,8 @@ const PERFECT_DAYS_TO_LEVEL_UP = 7;
 const ALL_ACTIVITIES: ActivityMode[] = ["vocabulary", "compare-contrast", "fact-opinion", "summaries", "character-traits"];
 
 export interface StoryRecord {
+  /** Same value for all activity submits from one loaded story (see Activity page). */
+  storyKey: string;
   activityType: string;
   date: string;
   totalQuestions: number;
@@ -61,6 +63,14 @@ function loadState(): GameState {
       if (!parsed.activityLevels) {
         parsed.activityLevels = defaultActivityLevels(parsed.level || 2);
       }
+      if (Array.isArray(parsed.storyHistory)) {
+        parsed.storyHistory = parsed.storyHistory.map(
+          (r: StoryRecord & { storyKey?: string }, i: number) => ({
+            ...r,
+            storyKey: r.storyKey ?? `legacy-${r.date}-${r.activityType}-${i}`,
+          }),
+        );
+      }
       return parsed;
     }
   } catch {}
@@ -86,25 +96,37 @@ function saveState(state: GameState) {
 export function useGameState() {
   const [state, setState] = useState<GameState>(loadState);
 
-  const handleCorrectAnswer = useCallback((earnStar = false) => {
+  /** Per-answer: stats only; garden growth is tied to perfect activities (see awardPerfectActivity). */
+  const handleCorrectAnswer = useCallback(() => {
+    setState((prev) => {
+      const next = { ...prev, totalCorrect: prev.totalCorrect + 1 };
+      saveState(next);
+      return next;
+    });
+  }, []);
+
+  /**
+   * Star + one garden growth step when an activity is submitted at 100% (Activity page applies Reading-path rules).
+   * Every STAGES.length perfect completions adds a flower, same as the old per-answer cycle.
+   */
+  const awardPerfectActivity = useCallback(() => {
     setState((prev) => {
       const nextStageIndex = prev.stageIndex + 1;
       const flowerComplete = nextStageIndex >= STAGES.length;
-
       const next: GameState = {
         ...prev,
-        stars: earnStar ? prev.stars + 1 : prev.stars,
+        stars: prev.stars + 1,
         stageIndex: flowerComplete ? 0 : nextStageIndex,
         currentStage: flowerComplete ? "seed" : STAGES[nextStageIndex],
         flowers: flowerComplete ? prev.flowers + 1 : prev.flowers,
-        totalCorrect: prev.totalCorrect + 1,
       };
       saveState(next);
       return next;
     });
   }, []);
 
-  const completeStory = useCallback((activityType: string, totalQuestions: number, correctAnswers: number) => {
+  const completeStory = useCallback(
+    (activityType: string, totalQuestions: number, correctAnswers: number, storyKey: string) => {
     setState((prev) => {
       const perfect = correctAnswers === totalQuestions;
       const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -146,6 +168,7 @@ export function useGameState() {
       const globalLevel = Math.min(...allLevels);
 
       const record: StoryRecord = {
+        storyKey,
         activityType,
         date: new Date().toISOString(),
         totalQuestions,
@@ -173,5 +196,5 @@ export function useGameState() {
     return state.activityLevels?.[activityType] || { level: 2, perfectStreak: 0, lastPerfectDate: null };
   }, [state.activityLevels]);
 
-  return { ...state, handleCorrectAnswer, completeStory, getActivityLevel };
+  return { ...state, handleCorrectAnswer, awardPerfectActivity, completeStory, getActivityLevel };
 }

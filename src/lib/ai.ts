@@ -37,9 +37,12 @@ export interface CombinedStoryData {
   compareContrast: CompareContrastData;
 }
 
-export async function generateCombinedStory(gradeLevel: number): Promise<CombinedStoryData> {
+export async function generateCombinedStory(
+  gradeLevel: number,
+  genre: string
+): Promise<CombinedStoryData> {
   const { data, error } = await supabase.functions.invoke("generate-story", {
-    body: { gradeLevel },
+    body: { gradeLevel, genre },
   });
 
   if (error) throw new Error(error.message || "Failed to generate content");

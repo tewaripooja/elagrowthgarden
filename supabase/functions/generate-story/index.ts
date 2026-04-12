@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function buildPrompt(level: number): string {
-  return `You are a children's story writer for grade ${level} readers (ages 7-10). Generate a fun, engaging story of about 200-250 words. Give the story a creative title and a genre (e.g. Adventure, Fantasy, Mystery, Sci-Fi, Fairy Tale, Humor, Animal Story, Friendship, etc.).
+function buildPrompt(level: number, genre: string): string {
+  return `You are a children's story writer for grade ${level} readers (ages 7-10). The story MUST match this genre theme: "${genre}". Generate a fun, engaging story of about 200-250 words. Give the story a creative title. In the JSON output, set the "genre" field to this exact string: "${genre}".
 
 Then create ALL of the following activities based on that SINGLE story:
 
@@ -30,7 +30,11 @@ serve(async (req) => {
   }
 
   try {
-    const { gradeLevel } = await req.json();
+    const { gradeLevel, genre: genreRaw } = await req.json();
+    const genre =
+      typeof genreRaw === "string" && genreRaw.trim().length > 0
+        ? genreRaw.trim()
+        : "Adventure";
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -43,8 +47,11 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: buildPrompt(gradeLevel || 2) },
-          { role: "user", content: `Please generate a new story with all activities for grade ${gradeLevel || 2} students. Make it fun and educational!` },
+          { role: "system", content: buildPrompt(gradeLevel || 2, genre) },
+          {
+            role: "user",
+            content: `Please generate a new story in the "${genre}" style with all activities for grade ${gradeLevel || 2} students. Make it fun and educational!`,
+          },
         ],
       }),
     });

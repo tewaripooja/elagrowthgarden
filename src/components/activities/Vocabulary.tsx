@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 interface Props {
   data: VocabularyData;
-  onCorrect: (earnStar?: boolean) => void;
+  onCorrect: () => void;
 }
 
 export default function Vocabulary({ data, onCorrect }: Props) {
@@ -23,7 +23,7 @@ export default function Vocabulary({ data, onCorrect }: Props) {
     newChecked[wordIndex] = isCorrect;
     setChecked(newChecked);
 
-    if (isCorrect) onCorrect(true);
+    if (isCorrect) onCorrect();
   };
 
   return (
