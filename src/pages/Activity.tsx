@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DynamicSky from "@/components/DynamicSky";
-import { ArrowLeft, BookOpen, LogOut, Pencil, Star, Users, FileText, Scale } from "lucide-react";
+import { ArrowLeft, BookOpen, Pencil, Star, Users, FileText, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,7 +12,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useAuth } from "@/contexts/AuthContext";
 import { useGameState } from "@/hooks/useGameState";
 import type { CombinedStoryData, ActivityType } from "@/lib/ai";
 import { STORY_GENRES } from "@/lib/storyGenres";
@@ -60,7 +59,6 @@ function isFullStoryPerfect(
 export default function Activity() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut } = useAuth();
   const gameState = useGameState();
 
   const locationState = (location.state ?? null) as {
@@ -161,11 +159,10 @@ export default function Activity() {
     setPerfectStoryLogoutOpen(true);
   }, [data, completedActivities, correctCounts, round]);
 
-  const handleLogoutFromPerfectStory = useCallback(async () => {
+  const handlePerfectStoryGoHome = useCallback(() => {
     setPerfectStoryLogoutOpen(false);
-    await signOut();
-    navigate("/login");
-  }, [navigate, signOut]);
+    navigate("/");
+  }, [navigate]);
 
   const highlightWords = (story: string, words: { word: string }[]) => {
     let result = story;
@@ -183,7 +180,7 @@ export default function Activity() {
           <DialogHeader>
             <DialogTitle className="text-xl">Perfect story</DialogTitle>
             <DialogDescription className="text-base text-foreground/90 pt-1">
-              You answered every question correctly for all activities in this story. Please log out to end your session.
+              You answered every question correctly for all activities in this story. Amazing work!
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-2">
@@ -193,15 +190,14 @@ export default function Activity() {
               className="font-heading rounded-xl"
               onClick={() => setPerfectStoryLogoutOpen(false)}
             >
-              Stay signed in
+              Keep reading
             </Button>
             <Button
               type="button"
               className="font-heading rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
-              onClick={() => void handleLogoutFromPerfectStory()}
+              onClick={handlePerfectStoryGoHome}
             >
-              <LogOut className="h-4 w-4 mr-2" />
-              Log out
+              Back to home
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -288,7 +284,7 @@ export default function Activity() {
                     </div>
                   </div>
                   <p
-                    className="font-body text-base leading-relaxed text-foreground mt-4"
+                    className="font-body text-base sm:text-lg leading-relaxed sm:leading-loose text-foreground mt-4 max-w-none"
                     dangerouslySetInnerHTML={{
                       __html: activeTab === "vocabulary"
                         ? highlightWords(data.story, data.vocabulary?.words || [])

@@ -1,8 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Sparkles, Trophy, BookA, GitCompareArrows, CheckCircle, FileText, Users, LogOut } from "lucide-react";
+import { BookOpen, Sparkles, Trophy, BookA, GitCompareArrows, CheckCircle, FileText, Users } from "lucide-react";
 import DynamicSky from "@/components/DynamicSky";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
 import type { ActivityType } from "@/lib/ai";
 import { STORY_GENRES } from "@/lib/storyGenres";
 import { PAGE_SHELL_GRADIENT } from "@/lib/pageTheme";
@@ -28,43 +26,13 @@ const activities = [
   { icon: GitCompareArrows, label: "Compare & Contrast", emoji: "🔀", genreIndex: 5 },
 ] as const;
 
-function firstNameFromIdentifier(identifier: string): string {
-  const local = identifier.includes("@") ? identifier.split("@")[0] : identifier;
-  const raw = local.split(/[._\s-]/)[0]?.trim() || "there";
-  if (!raw) return "there";
-  return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
-}
-
 export default function Index() {
   const navigate = useNavigate();
-  const { email, signOut } = useAuth();
 
   return (
     <DynamicSky>
       <div className={cn("min-h-screen w-full flex flex-col", PAGE_SHELL_GRADIENT)}>
-        <header className="w-full max-w-4xl mx-auto px-4 pt-4 flex justify-end items-center gap-3">
-          {email ? (
-            <>
-              <span className="text-sm text-white/90 drop-shadow-sm font-heading font-semibold">
-                Hi {firstNameFromIdentifier(email)}
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-white hover:bg-white/20 shrink-0 font-heading"
-                onClick={() => {
-                  void signOut();
-                  navigate("/login");
-                }}
-              >
-                <LogOut className="h-4 w-4 mr-1" />
-                Log out
-              </Button>
-            </>
-          ) : null}
-        </header>
-        <div className="w-full max-w-4xl mx-auto px-4 py-6 md:py-12 flex flex-col gap-8 md:gap-10 flex-1 justify-center">
+        <div className="w-full max-w-4xl mx-auto px-4 py-10 md:py-16 flex flex-col gap-8 md:gap-10 flex-1 justify-center">
           <div className="flex justify-center gap-2 text-4xl drop-shadow-lg saturate-150" aria-hidden>
             <span className="[filter:drop-shadow(0_0_8px_rgba(255,255,255,0.8))]">✨</span>
             <span>🌈</span>

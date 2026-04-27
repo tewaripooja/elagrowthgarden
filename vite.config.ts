@@ -6,7 +6,8 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
+    // true = bind 0.0.0.0 so phones / other PCs can open http://<your-LAN-IP>:8080
+    host: true,
     port: 8080,
     hmr: {
       overlay: false,

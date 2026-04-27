@@ -7,7 +7,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "The Map in the Attic",
       genre: "Adventure",
       story:
-        "Maya found an ancient map rolled up in a dusty box in the attic. Her grandmother said it might lead to a small treasure the family had hidden long ago. With courage she did not know she had, Maya began a journey through the woods behind the house. The path was steep, but she kept going. At last she reached an old oak tree marked on the map. She dug where the X was drawn and uncovered a metal box. Inside were photos, a letter, and a shiny coin. The real treasure was the mysterious story of her great-grandparents' first adventure together.",
+        "Maya found an ancient map rolled up in a dusty box in the attic. Her grandmother said it might lead to a small treasure the family had hidden long ago. With courage she did not know she had, Maya began a journey through the woods behind the house. The path was steep, but she kept going. At last she reached an old oak tree marked on the map. She dug where the X was drawn and uncovered a metal box. Inside were photos, a letter, and a shiny coin. The real treasure was the mysterious story of her great-grandparents' first adventure together. That evening Maya spread the photos across the kitchen table while rain drummed softly on the roof. Her grandmother brewed tea and pointed to a young couple standing on a foggy dock, then to a tiny sailboat sketched in the margins of the letter. They read the letter aloud, line by line, about storms weathered, jokes shared on long nights at sea, and a promise to always find their way home. Maya traced the coin's worn ridges and imagined how many hands had held it through hard winters and easier summers. When she climbed the attic stairs again, the air smelled less like dust and more like stories waiting for the next curious visitor.",
       vocabulary: {
         words: [
           { word: "ancient", options: ["very old", "very loud", "very tiny"], correctIndex: 0 },
@@ -64,7 +64,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "The Rope Bridge",
       genre: "Adventure",
       story:
-        "The trail to the waterfall ended at a rope bridge that swayed over a rushing stream. Nico's heart beat fast. The planks looked slippery, and the ropes were frayed in spots. Still, the group needed to cross to finish the hike. Nico took a deep breath and stepped carefully, one foot at a time. Halfway across, a board snapped! A friend steadied the rope while Nico crawled the last few feet. On the other side, everyone cheered. The waterfall was loud and bright, and Nico felt proud of the risky crossing.",
+        "The trail to the waterfall ended at a rope bridge that swayed over a rushing stream. Nico's heart beat fast. The planks looked slippery, and the ropes were frayed in spots. Still, the group needed to cross to finish the hike. Nico took a deep breath and stepped carefully, one foot at a time. Halfway across, a board snapped! A friend steadied the rope while Nico crawled the last few feet. On the other side, everyone cheered. The waterfall was loud and bright, and Nico felt proud of the risky crossing. Mist cooled their faces as they followed the trail along mossy stones. A guide explained how winter floods sometimes loosened boards, which made Nico listen extra closely to every creak on the way back. They paused at a wide bend in the stream to refill water bottles and watch dragonflies stitch across the surface. By the time the parking lot came into view, legs ached and boots were muddy, but Nico kept replaying the steady grip of the rope and the cheer that rose when both feet touched solid ground again.",
       vocabulary: {
         words: [
           { word: "frayed", options: ["worn and coming apart", "brand new", "frozen solid"], correctIndex: 0 },
@@ -121,7 +121,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "The Hidden Cove",
       genre: "Adventure",
       story:
-        "Kayaks slid into the bay at sunrise. The team paddled around a rocky point until Eli spotted a narrow gap between tall cliffs. They slipped through and entered a hidden cove with calm green water and smooth shells on the shore. A seal popped up and stared, then dove away. They rested, ate snacks, and sketched the cliffs in a notebook. On the way back, waves grew choppy, but they paddled as a team and reached the dock tired and happy.",
+        "Kayaks slid into the bay at sunrise. The team paddled around a rocky point until Eli spotted a narrow gap between tall cliffs. They slipped through and entered a hidden cove with calm green water and smooth shells on the shore. A seal popped up and stared, then dove away. They rested, ate snacks, and sketched the cliffs in a notebook. On the way back, waves grew choppy, but they paddled as a team and reached the dock tired and happy. Gulls wheeled overhead while they rinsed sand from their shoes and compared sketches. Eli taped a shell into the notebook beside a smear of salt water that looked like a tiny map of its own. Someone brewed cocoa from a thermos, and laughter carried across the parking lot as parents listened to the story of the narrow gap. Later, photos of the cove appeared on the community board with a note that said, small adventures still count. Even the seal seemed worth a sentence, because everyone agreed that quiet staring counted as a kind of hello.",
       vocabulary: {
         words: [
           { word: "cove", options: ["a small sheltered bay", "a kind of bird", "a math tool"], correctIndex: 0 },
@@ -181,7 +181,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "The Dragon's Egg",
       genre: "Fantasy & Magic",
       story:
-        "In the village library, a book glowed on the highest shelf. When Priya opened it, a tiny dragon egg rolled onto her lap, warm as toast. A note said, Keep me kind. That night the egg hatched into a dragon no bigger than a kitten, with shimmering scales. It drank milk and sneezed sparks. Priya practiced whispering gentle words whenever it flared up. Soon the dragon could light candles without scorching the table. The librarian smiled and said some magic grows best with patience.",
+        "In the village library, a book glowed on the highest shelf. When Priya opened it, a tiny dragon egg rolled onto her lap, warm as toast. A note said, Keep me kind. That night the egg hatched into a dragon no bigger than a kitten, with shimmering scales. It drank milk and sneezed sparks. Priya practiced whispering gentle words whenever it flared up. Soon the dragon could light candles without scorching the table. The librarian smiled and said some magic grows best with patience. Priya carried a tiny blanket in her backpack so the dragon could nap between chapters. During story hour, children leaned closer whenever its tail tapped the rhythm of a rhyme. Even the sternest visitor softened when the dragon lit only the corners of a page so everyone could see the pictures. By Friday, a sign appeared on the bulletin board: gentle dragons welcome, please bring napkins for possible sparks. Priya realized kindness was not one big moment but dozens of small choices, like sharing snacks and apologizing when a sneeze left a scorch mark on a bookmark.",
       vocabulary: {
         words: [
           { word: "shimmering", options: ["sparkling softly", "completely invisible", "very heavy"], correctIndex: 0 },
@@ -238,7 +238,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "The Talking Tree",
       genre: "Fantasy & Magic",
       story:
-        "Old Willow's roots curled around a stone well in the courtyard. When Sam pressed a hand to the bark, the tree spoke in a creaky voice, asking for water. Sam filled buckets and poured them carefully. In return, Willow dropped a silver leaf that warmed like a tiny sun. Sam shared the leaf's light with neighbors during a blackout. The tree slept through winter and woke again, whispering new riddles every spring.",
+        "Old Willow's roots curled around a stone well in the courtyard. When Sam pressed a hand to the bark, the tree spoke in a creaky voice, asking for water. Sam filled buckets and poured them carefully. In return, Willow dropped a silver leaf that warmed like a tiny sun. Sam shared the leaf's light with neighbors during a blackout. The tree slept through winter and woke again, whispering new riddles every spring. On windy afternoons, Sam brought a stool and listened while Willow described stars the way other people described birds. Neighbors began leaving apples on the well's edge, not as gifts for magic, but as thank-yous for light during storms. Sam learned that riddles were easier after a good night's sleep and that the courtyard felt larger when everyone believed a little mystery could be friendly. When spring buds unfurled, Willow's first riddle was simple: what grows smaller when you share it? Sam answered, loneliness, and the branches swayed as if the tree were applauding.",
       vocabulary: {
         words: [
           { word: "courtyard", options: ["an open area inside a building", "a kind of sandwich", "a loud noise"], correctIndex: 0 },
@@ -295,7 +295,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "The Crystal Cave",
       genre: "Fantasy & Magic",
       story:
-        "Torches flickered as the friends entered a cave lined with crystals that hummed softly. Each note matched a color: blue for calm, red for brave, yellow for curious. When they sang together, the crystals glowed brighter and opened a hidden door. Inside, a small pool reflected the stars. They made a pact to protect the cave and left only footprints that faded by morning.",
+        "Torches flickered as the friends entered a cave lined with crystals that hummed softly. Each note matched a color: blue for calm, red for brave, yellow for curious. When they sang together, the crystals glowed brighter and opened a hidden door. Inside, a small pool reflected the stars. They made a pact to protect the cave and left only footprints that faded by morning. They practiced harmonies on the walk home, arguing cheerfully about which color belonged to which feeling. The next weekend they returned with notebooks instead of snacks, sketching patterns where light touched stone. A ranger noticed their muddy boots and listened to their story, then offered maps of safer caves to explore. The friends decided their pact meant visiting often, never carving names, and always carrying an extra battery for their torches. Years later they still argued about colors, but everyone agreed the cave sounded happiest when all voices joined at once.",
       vocabulary: {
         words: [
           { word: "flickered", options: ["unsteady light", "total darkness", "loud thunder"], correctIndex: 0 },
@@ -355,7 +355,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "The Missing Lunchbox",
       genre: "Mystery",
       story:
-        "Ava's lunchbox vanished from the classroom cubby. She checked every shelf and even peeked under the teacher's desk. A crumb trail led to the art room. There, the lunchbox sat beside a paintbrush jar, smeared with blue fingerprints. The paint was evidence that led to the art room. The class compared hand sizes until the smallest match belonged to Ben, who had borrowed the lunchbox to use as a palette tray. He apologized and washed it clean. Case closed with a laugh.",
+        "Ava's lunchbox vanished from the classroom cubby. She checked every shelf and even peeked under the teacher's desk. A crumb trail led to the art room. There, the lunchbox sat beside a paintbrush jar, smeared with blue fingerprints. The paint was evidence that led to the art room. The class compared hand sizes until the smallest match belonged to Ben, who had borrowed the lunchbox to use as a palette tray. He apologized and washed it clean. Case closed with a laugh. Ava helped rinse brushes while Ben explained how the lid made a perfect mixing tray for sky colors. The teacher added a shelf labeled shared tools so future artists would not need to borrow lunch gear. At recess, Ava told the story like a detective show, complete with dramatic pauses, until everyone agreed crumbs could be useful clues. By Monday, a cartoon poster hung on the wall: ask first, paint second, snacks always welcome home.",
       vocabulary: {
         words: [
           { word: "vanished", options: ["disappeared suddenly", "grew larger", "became heavier"], correctIndex: 0 },
@@ -412,7 +412,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "Footprints in the Snow",
       genre: "Mystery",
       story:
-        "Fresh snow covered the yard, but two sets of footprints crossed the driveway. One was small boots; the other looked like sneakers. They stopped at the mailbox. Inside was a thank-you card with no name, only a drawing of a dog. The neighbor's new puppy had knocked the mail loose yesterday. The small prints matched the neighbor kid's boots, and the sneaker prints were the mail carrier's. Mystery solved: a friendly thank-you, not a prank.",
+        "Fresh snow covered the yard, but two sets of footprints crossed the driveway. One was small boots; the other looked like sneakers. They stopped at the mailbox. Inside was a thank-you card with no name, only a drawing of a dog. The neighbor's new puppy had knocked the mail loose yesterday. The small prints matched the neighbor kid's boots, and the sneaker prints were the mail carrier's. Mystery solved: a friendly thank-you, not a prank. The mail carrier laughed when she heard the theory and admitted she had paused to pet the puppy. The neighbor kid promised to shovel a wider path so envelopes would not tumble again. That afternoon, someone built a tiny snow dog beside the mailbox, complete with a carrot nose borrowed from the kitchen. When the sun melted everything into silver puddles, the thank-you card stayed taped inside the mailbox as a reminder that mysteries could end with cookies and hot cocoa instead of worries.",
       vocabulary: {
         words: [
           { word: "fresh", options: ["newly fallen or made", "very old", "completely melted"], correctIndex: 0 },
@@ -469,7 +469,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "The Library Clue",
       genre: "Mystery",
       story:
-        "A bookmark shaped like a rocket went missing from the library prize box. Clara checked the return cart and found a book about space with the rocket bookmark tucked inside. The last borrower was listed on the computer. She asked politely, and the borrower returned the prize, thinking it was a giveaway. Labels were added so prizes stay separate from books. The library cheered Clara's careful detective work.",
+        "A bookmark shaped like a rocket went missing from the library prize box. Clara checked the return cart and found a book about space with the rocket bookmark tucked inside. The last borrower was listed on the computer. She asked politely, and the borrower returned the prize, thinking it was a giveaway. Labels were added so prizes stay separate from books. The library cheered Clara's careful detective work. Clara made a simple chart with bright stickers so younger students could see which bookmarks belonged to the summer reading challenge. The borrower helped laminate signs, still a little embarrassed but determined to make things right. Even the librarian's cat seemed calmer once the prize box had a clear lid. At closing time, Clara tucked her own notebook into her bag, already planning how to track returned puzzles without turning the library into a spy movie. She liked mysteries best when everyone ended up smiling.",
       vocabulary: {
         words: [
           { word: "borrower", options: ["someone who checks out a book", "a librarian's name tag", "a shelf"], correctIndex: 0 },
@@ -529,7 +529,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "The Principal's Wig",
       genre: "Silly & Funny",
       story:
-        "During a windy assembly, the principal's hairpiece lifted like a small cloud and landed on the mascot's beak. The gym howled with laughter. The principal bowed, stuck the wig back on crooked, and announced a hat day tomorrow. By the end, even the shy kids were giggling. The yearbook photo caught the wig mid-air, forever legendary.",
+        "During a windy assembly, the principal's hairpiece lifted like a small cloud and landed on the mascot's beak. The gym howled with laughter. The principal bowed, stuck the wig back on crooked, and announced a hat day tomorrow. By the end, even the shy kids were giggling. The yearbook photo caught the wig mid-air, forever legendary. The band tried to play through the noise but gave up and tapped drums softly instead. Teachers passed out stickers shaped like tiny hats, and the custodian pretended to measure the wind with a mop handle. At lunch, students traded theories about whether ceiling fans had teamed up with the weather. The principal practiced dramatic bows in the mirror and decided windy days were now officially spirit days. Even the mascot kept the photo as a screensaver, beak proudly displayed.",
       vocabulary: {
         words: [
           { word: "wig", options: ["fake hair worn on the head", "a kind of shoe", "a math tool"], correctIndex: 0 },
@@ -586,7 +586,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "The Dog Ate My Homework",
       genre: "Silly & Funny",
       story:
-        "Jamal swore the new puppy ate his math sheet. The teacher raised an eyebrow until the puppy trotted in with paper shreds on its nose. Jamal had to redo the problems on the board while the class tried not to snort. He earned a sticker for honesty and a new folder with a latch. The puppy got extra chew toys at home.",
+        "Jamal swore the new puppy ate his math sheet. The teacher raised an eyebrow until the puppy trotted in with paper shreds on its nose. Jamal had to redo the problems on the board while the class tried not to snort. He earned a sticker for honesty and a new folder with a latch. The puppy got extra chew toys at home. Jamal discovered the latch sounded like a tiny drum when he snapped it shut, which made the puppy wag even harder. Friends offered to copy notes, but Jamal wanted to solve each problem himself so the answers felt earned. The teacher snapped a photo of the finished board for the class newsletter under the headline math survives puppy attack. At home, Jamal built a paper-toy bin labeled not food so future homework would stand a chance. The puppy slept through dinner, exhausted from fame.",
       vocabulary: {
         words: [
           { word: "shreds", options: ["tiny torn pieces", "whole notebooks", "metal bolts"], correctIndex: 0 },
@@ -643,7 +643,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "Backwards Day",
       genre: "Silly & Funny",
       story:
-        "On Backwards Day, shoes went on the wrong feet, shirts were inside out, and hello meant goodbye. The lunch line served dessert first, then broccoli. The gym teacher walked backward and bumped into a cone. Everyone laughed until hiccups broke out. By afternoon, the class voted to read stories backward too, which sounded like nonsense poetry. Normal Tuesday never felt so calm.",
+        "On Backwards Day, shoes went on the wrong feet, shirts were inside out, and hello meant goodbye. The lunch line served dessert first, then broccoli. The gym teacher walked backward and bumped into a cone. Everyone laughed until hiccups broke out. By afternoon, the class voted to read stories backward too, which sounded like nonsense poetry. Normal Tuesday never felt so calm. Someone tried spelling their name backwards on name tags, which made attendance sound like a secret code. The librarian wore two different socks on purpose and challenged anyone to notice within three guesses. Even the classroom clock seemed confused, because everyone insisted the minute hand should run the wrong way until lunch. When the final bell rang, students walked out forward again but kept grinning, pockets full of stickers that said chaos approved.",
       vocabulary: {
         words: [
           { word: "inside out", options: ["with the inner side showing", "perfectly neat", "missing sleeves"], correctIndex: 0 },
@@ -703,7 +703,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "The Fox and the Berry Bush",
       genre: "Animals & Nature",
       story:
-        "At dawn, a red fox slipped between fence posts to reach a berry bush heavy with fruit. Birds argued above, but the fox waited patiently. When a gap opened, it snatched a few berries and trotted to the den where kits wiggled with excitement. Later, gardeners added a small hole so wildlife could pass without breaking the fence. The fox returned the next evening, careful and quick.",
+        "At dawn, a red fox slipped between fence posts to reach a berry bush heavy with fruit. Birds argued above, but the fox waited patiently. When a gap opened, it snatched a few berries and trotted to the den where kits wiggled with excitement. Later, gardeners added a small hole so wildlife could pass without breaking the fence. The fox returned the next evening, careful and quick. Dew clung to the grass like tiny lenses, and the kits learned to watch for the gardener's boots before darting out. Sparrows scolded from the fence rail, but the fox ignored the noise and focused on ripe clusters that smelled like summer. One gardener left a shallow bowl of water near the new opening, sliding it back whenever raccoons tipped it over. By autumn, the bush looked picked but healthy, and the fox carried one last berry like a jewel for a kit who had slept through dawn.",
       vocabulary: {
         words: [
           { word: "den", options: ["an animal's hidden home", "a type of berry", "a school desk"], correctIndex: 0 },
@@ -760,7 +760,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "Penguin Parade",
       genre: "Animals & Nature",
       story:
-        "At the aquarium, penguins waddled in a line for their morning fish. Trainers counted each bird to make sure everyone ate. One chick stumbled, and an older penguin paused until the chick caught up. Kids pressed hands to the glass, whispering cheers. Outside, wild gulls screamed for scraps, but the penguins ignored them and slid into the water in a splashy finale.",
+        "At the aquarium, penguins waddled in a line for their morning fish. Trainers counted each bird to make sure everyone ate. One chick stumbled, and an older penguin paused until the chick caught up. Kids pressed hands to the glass, whispering cheers. Outside, wild gulls screamed for scraps, but the penguins ignored them and slid into the water in a splashy finale. Bubbles rose in silver curtains as the line zipped underwater, then popped up again in perfect order. A trainer tossed extra fish to the older penguin, calling it coach of the day. Parents filmed the chick's wobble until phones ran low on storage. In the gift shop, a child begged for a plush penguin, promising to remember that patience looked like waiting for a friend. The gulls outside kept yelling, but inside the glass, the show belonged to teamwork and splashes.",
       vocabulary: {
         words: [
           { word: "aquarium", options: ["a building with water habitats for animals", "a desert park", "a shoe store"], correctIndex: 0 },
@@ -817,7 +817,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "The Busy Beaver",
       genre: "Animals & Nature",
       story:
-        "A beaver dragged branches across the pond until a dam rose slowly higher. Water spread into a calm pool where fish flickered. Otters visited, and herons stalked the edges. Rangers marked the area as protected so hikers could watch from a distance. At night, the beaver slapped the water with its tail if strangers came too close, a warning drum echoing through the trees.",
+        "A beaver dragged branches across the pond until a dam rose slowly higher. Water spread into a calm pool where fish flickered. Otters visited, and herons stalked the edges. Rangers marked the area as protected so hikers could watch from a distance. At night, the beaver slapped the water with its tail if strangers came too close, a warning drum echoing through the trees. Morning mist hid the construction zone until sunlight cut through and showed fresh chew marks on a birch trunk. Ducks paddled in lazy circles, benefiting from the slower current. A ranger explained to a school group how dams can create wetlands that frogs love, turning the lesson into a scavenger hunt for egg clusters. The beaver watched from a safe shadow, whiskers twitching, proud of the pool that had not existed a season ago. Even the herons seemed to bow before stepping closer to hunt.",
       vocabulary: {
         words: [
           { word: "dam", options: ["a wall beavers build to block water", "a type of fish", "a hiking trail"], correctIndex: 0 },
@@ -877,7 +877,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "Robot Helper",
       genre: "Space & Science",
       story:
-        "Engineer Rosa powered up a small robot named Zip to sort recycling. Zip rolled on wheels and scanned labels with a blue light. When Zip confused plastic with metal, Rosa adjusted the code and added a new sensor. Soon Zip hummed happily down the line, stacking bins perfectly. Rosa said science is really trial, error, and teamwork.",
+        "Engineer Rosa powered up a small robot named Zip to sort recycling. Zip rolled on wheels and scanned labels with a blue light. When Zip confused plastic with metal, Rosa adjusted the code and added a new sensor. Soon Zip hummed happily down the line, stacking bins perfectly. Rosa said science is really trial, error, and teamwork. Volunteers brought cardboard samples so Zip could learn creases and corners, not just colors. Rosa's notebook filled with scribbles about light angles and speed settings, each page dated like a diary of small victories. When Zip paused to recalibrate, children waved as if greeting a pet. By Friday, the recycling center posted a chart showing fewer mistakes per hour, and Rosa taped a gold star on Zip's frame. She still insisted the best upgrade was listening to people who actually lifted bins every day.",
       vocabulary: {
         words: [
           { word: "sensor", options: ["a device that detects something", "a type of wheel", "a recycling bin"], correctIndex: 0 },
@@ -934,7 +934,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "Moon Base Snack",
       genre: "Space & Science",
       story:
-        "On the practice moon base, astronauts grew lettuce under purple LED lights. The leaves tasted peppery in low gravity when they floated off forks. A computer tracked air and water so nothing was wasted. Visitors in suits toured the greenhouse and waved at Earth through a thick window. The team joked that the crunchiest salad was also the farthest from home.",
+        "On the practice moon base, astronauts grew lettuce under purple LED lights. The leaves tasted peppery in low gravity when they floated off forks. A computer tracked air and water so nothing was wasted. Visitors in suits toured the greenhouse and waved at Earth through a thick window. The team joked that the crunchiest salad was also the farthest from home. They measured leaf growth with rulers taped to trays and argued cheerfully about whether music helped plants. A tiny camera sent images to classrooms so students could compare moon lettuce with their own window pots. When filters needed cleaning, two astronauts worked in slow motion, laughing as droplets drifted sideways. Earth looked like a marble in the window, close enough to recognize and far enough to make every bite of salad feel like a small miracle.",
       vocabulary: {
         words: [
           { word: "astronauts", options: ["people trained to travel in space", "farmers on Earth only", "types of lettuce"], correctIndex: 0 },
@@ -991,7 +991,7 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       title: "The Time Machine Snack",
       genre: "Space & Science",
       story:
-        "In the lab, a tiny time machine hummed like a fridge. Intern Luis sent a cookie one minute into the future. The cookie returned slightly warmer, as if fresh from the oven. Scientists logged the temperature and cheered. No dinosaurs appeared, just crumbs, but the team learned even small jumps need careful math. Luis wrote a comic about a brave crumb traveling time.",
+        "In the lab, a tiny time machine hummed like a fridge. Intern Luis sent a cookie one minute into the future. The cookie returned slightly warmer, as if fresh from the oven. Scientists logged the temperature and cheered. No dinosaurs appeared, just crumbs, but the team learned even small jumps need careful math. Luis wrote a comic about a brave crumb traveling time. Whiteboards filled with arrows and clocks until someone joked that sprinkles might be time travelers too. A safety officer insisted on goggles even for crumbs, which made everyone grin but follow the rule. Luis practiced speeches for visiting students, explaining how measuring tiny changes could matter for medicine and navigation someday. When the machine cooled down, the hum faded into a soft tick, and the lab felt bigger, as if the minute they tested had stretched wide enough for imagination to walk through.",
       vocabulary: {
         words: [
           { word: "intern", options: ["a student learning on the job", "a type of cookie", "a dinosaur"], correctIndex: 0 },
