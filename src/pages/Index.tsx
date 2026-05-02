@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { BookOpen, Sparkles, Trophy, BookA, GitCompareArrows, CheckCircle, FileText, Users } from "lucide-react";
 import DynamicSky from "@/components/DynamicSky";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import type { ActivityType } from "@/lib/ai";
 import { STORY_GENRES } from "@/lib/storyGenres";
 import { PAGE_SHELL_GRADIENT } from "@/lib/pageTheme";
@@ -28,11 +30,33 @@ const activities = [
 
 export default function Index() {
   const navigate = useNavigate();
+  const { user, loading, signOut } = useAuth();
 
   return (
     <DynamicSky>
       <div className={cn("min-h-screen w-full flex flex-col", PAGE_SHELL_GRADIENT)}>
         <div className="w-full max-w-4xl mx-auto px-4 py-10 md:py-16 flex flex-col gap-8 md:gap-10 flex-1 justify-center">
+          <div className="flex w-full justify-end items-center gap-2 shrink-0">
+            {!loading && user ? (
+              <>
+                <span
+                  className="text-xs md:text-sm text-cyan-50 font-medium truncate max-w-[160px] md:max-w-[260px] drop-shadow-sm"
+                  title={user.email ?? undefined}
+                >
+                  {user.email}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 border-white/60 bg-white/15 text-white hover:bg-white/25 hover:text-white"
+                  onClick={() => void signOut()}
+                >
+                  Sign out
+                </Button>
+              </>
+            ) : null}
+          </div>
           <div className="flex justify-center gap-2 text-4xl drop-shadow-lg saturate-150" aria-hidden>
             <span className="[filter:drop-shadow(0_0_8px_rgba(255,255,255,0.8))]">✨</span>
             <span>🌈</span>
