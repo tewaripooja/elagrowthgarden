@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
+import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <RouteErrorBoundary>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
@@ -52,6 +54,7 @@ const App = () => (
             />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </RouteErrorBoundary>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

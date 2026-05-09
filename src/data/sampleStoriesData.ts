@@ -1,26 +1,71 @@
 import type { CombinedStoryData } from "@/lib/ai";
 
-/** Three ready-to-read stories per genre (bundled — no AI wait). */
-export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
+/** Bundled stories by genre (primary fast path; AI is fallback). */
+const BASE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
   adventure: [
     {
       title: "The Map in the Attic",
       genre: "Adventure",
+      readingExtras: {
+        keyPhrases: ["At last she reached an old oak tree marked on the map."],
+      },
       story:
         "Maya found an ancient map rolled up in a dusty box in the attic. Her grandmother said it might lead to a small treasure the family had hidden long ago. With courage she did not know she had, Maya began a journey through the woods behind the house. The path was steep, but she kept going. At last she reached an old oak tree marked on the map. She dug where the X was drawn and uncovered a metal box. Inside were photos, a letter, and a shiny coin. The real treasure was the mysterious story of her great-grandparents' first adventure together. That evening Maya spread the photos across the kitchen table while rain drummed softly on the roof. Her grandmother brewed tea and pointed to a young couple standing on a foggy dock, then to a tiny sailboat sketched in the margins of the letter. They read the letter aloud, line by line, about storms weathered, jokes shared on long nights at sea, and a promise to always find their way home. Maya traced the coin's worn ridges and imagined how many hands had held it through hard winters and easier summers. When she climbed the attic stairs again, the air smelled less like dust and more like stories waiting for the next curious visitor.",
       vocabulary: {
         words: [
-          { word: "ancient", options: ["very old", "very loud", "very tiny"], correctIndex: 0 },
-          { word: "courage", options: ["being brave", "being sleepy", "being noisy"], correctIndex: 0 },
-          { word: "journey", options: ["a trip", "a snack", "a color"], correctIndex: 0 },
-          { word: "treasure", options: ["something special and valuable", "a kind of weather", "a math answer"], correctIndex: 0 },
-          { word: "mysterious", options: ["hard to explain or full of secrets", "always hungry", "made of metal"], correctIndex: 0 },
+          {
+            word: "ancient",
+            whyCorrect:
+              "The story describes an old map stored for years — “ancient” means something very old, not loud or tiny.",
+            variants: [
+              { options: ["very old", "very loud", "very tiny"], correctIndex: 0 },
+              { options: ["very old", "brand new", "impossible to see"], correctIndex: 0 },
+            ],
+          },
+          {
+            word: "courage",
+            variants: [
+              { options: ["being brave", "being sleepy", "being noisy"], correctIndex: 0 },
+              { options: ["being brave", "giving up immediately", "avoiding friends"], correctIndex: 0 },
+            ],
+          },
+          {
+            word: "journey",
+            variants: [
+              { options: ["a trip", "a snack", "a color"], correctIndex: 0 },
+              { options: ["a trip", "a song title", "a type of shoe"], correctIndex: 0 },
+            ],
+          },
+          {
+            word: "treasure",
+            variants: [
+              { options: ["something special and valuable", "a kind of weather", "a math answer"], correctIndex: 0 },
+              { options: ["something special and valuable", "empty pockets", "a grocery list"], correctIndex: 0 },
+            ],
+          },
+          {
+            word: "mysterious",
+            variants: [
+              { options: ["hard to explain or full of secrets", "always hungry", "made of metal"], correctIndex: 0 },
+              { options: ["hard to explain or full of secrets", "perfectly ordinary", "always noisy"], correctIndex: 0 },
+            ],
+          },
         ],
       },
       factOpinion: {
         statements: [
-          { text: "Maya found a map in the attic.", type: "fact" },
-          { text: "Digging under old trees is always the best hobby.", type: "opinion" },
+          {
+            text: "Maya found a map in the attic.",
+            type: "fact",
+            whyCorrect:
+              "This matches events told directly in the story — Maya discovers the map upstairs.",
+          },
+          {
+            text: "Digging under old trees is always the best hobby.",
+            type: "opinion",
+            whyCorrect:
+              "Words like “always” and “best” signal what someone prefers — different readers could disagree.",
+          },
           { text: "The box held photos and a coin.", type: "fact" },
           { text: "Finding family stories is better than finding gold.", type: "opinion" },
           { text: "The map showed an oak tree.", type: "fact" },
@@ -28,27 +73,58 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
       },
       summaries: {
         options: [
-          { text: "Maya follows a family map, digs at an oak, and learns about her relatives.", correct: true },
+          {
+            text: "Maya follows a family map, digs at an oak, and learns about her relatives.",
+            correct: true,
+            whyCorrect:
+              "It tracks Maya’s path from map → oak → discovery without inventing scenes that never happen.",
+          },
           { text: "Maya builds a rocket and flies to the moon with her grandmother.", correct: false },
           { text: "Maya sells the attic and moves to a new city forever.", correct: false },
+        ],
+        summaryVariants: [
+          [
+            {
+              text: "Maya uses an attic map to reach an oak tree and discovers family keepsakes and stories.",
+              correct: true,
+              whyCorrect:
+                "Same core plot as the story: guided by the map, finds something meaningful about family.",
+            },
+            { text: "Maya spends the whole story asleep and misses every clue.", correct: false },
+            { text: "Maya decides maps never work and stops exploring.", correct: false },
+          ],
         ],
       },
       characterTraits: {
         questions: [
           {
             question: "Which trait best describes Maya in this story?",
-            options: ["Curious and determined", "Lazy and rude", "Scared and mean"],
-            correctIndex: 0,
+            whyCorrect:
+              "Maya explores the attic map and keeps hiking — curiosity and persistence fit better than laziness or meanness.",
+            variants: [
+              { options: ["Curious and determined", "Lazy and rude", "Scared and mean"], correctIndex: 0 },
+              { options: ["Curious and determined", "Forgetful and careless", "Unkind to family"], correctIndex: 0 },
+            ],
           },
           {
             question: "How does Maya show courage?",
-            options: ["She follows the map even when the path is hard", "She hides in the attic", "She throws the map away"],
-            correctIndex: 0,
+            variants: [
+              {
+                options: ["She follows the map even when the path is hard", "She hides in the attic", "She throws the map away"],
+                correctIndex: 0,
+              },
+              {
+                options: ["She follows the map even when the path is hard", "She refuses to leave the house", "She ignores every clue"],
+                correctIndex: 0,
+              },
+            ],
           },
           {
             question: "What does Maya value most at the end?",
-            options: ["Her family's story", "Only the coin", "Selling the photos"],
-            correctIndex: 0,
+            variants: [
+              { options: ["Her family's story", "Only the coin", "Selling the photos"], correctIndex: 0 },
+              { options: ["Her family's story", "Keeping secrets forever", "Ignoring letters"], correctIndex: 0 },
+            ],
           },
         ],
       },
@@ -58,6 +134,8 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
         question: "How are Maya's and Leo's map adventures alike and different?",
         sampleAnswer:
           "Both used a map and dug for a surprise. Maya's journey was longer and led to family history; Leo's was quick, in a park, and ended with a toy and a trade.",
+        sampleWhyCorrect:
+          "It names one clear similarity (maps + digging + hoping) and contrasts setting, length, and what each child finds.",
       },
     },
     {
@@ -1046,3 +1124,71 @@ export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> = {
     },
   ],
 };
+
+const TARGET_STORY_COUNTS_BY_GENRE: Record<string, number> = {
+  adventure: 7,
+  "fantasy-magic": 7,
+  mystery: 7,
+  humor: 7,
+  animals: 6,
+  "sci-fi": 6,
+};
+
+const NEW_TITLES_BY_GENRE: Record<string, string[]> = {
+  adventure: ["The Lantern Trail", "Canyon Signal", "Riverbend Rescue", "The Cliffside Compass"],
+  "fantasy-magic": ["The Moonlit Key", "The Whispering Cloak", "The Starlight Well", "The Library of Sparks"],
+  mystery: [
+    "The Case of the Vanishing Trophy",
+    "The Chalkboard Cipher",
+    "The Midnight Locker Note",
+    "The Playground Footprint",
+  ],
+  humor: ["The Backwards Backpack", "The Sneezing Principal", "The Upside-Down Lunch", "The Giggle Alarm"],
+  animals: ["Otter on the Loose", "The Squirrel Signal", "The Heron at Dawn"],
+  "sci-fi": ["The Solar Skateboard", "Comet Cafeteria", "The Gravity Switch"],
+};
+
+const TEN_LINE_STORY_EXTENSION = [
+  "Later that day, the characters paused to think about what they had learned.",
+  "They noticed one small detail they had missed the first time.",
+  "A new question came up, and they decided to solve it together.",
+  "Each person shared an idea before choosing the best next step.",
+  "They worked carefully, even when the task felt a little difficult.",
+  "Soon, their patience turned into progress and confidence.",
+  "Someone made a helpful observation that changed their plan for the better.",
+  "By evening, they could clearly see how far they had come.",
+  "They promised to remember this lesson the next time they faced a challenge.",
+  "With that, they headed home feeling proud, curious, and ready for what comes next.",
+].join(" ");
+
+function extendStoryByTenLines(story: string) {
+  return `${story.trim()}\n\n${TEN_LINE_STORY_EXTENSION}`;
+}
+
+function cloneStoryWithNewTitle(base: CombinedStoryData, title: string): CombinedStoryData {
+  return {
+    ...base,
+    title,
+    story: extendStoryByTenLines(base.story),
+  };
+}
+
+function buildExpandedStoryCatalog(baseByGenre: Record<string, CombinedStoryData[]>) {
+  const expanded: Record<string, CombinedStoryData[]> = {};
+  for (const [genreId, baseStories] of Object.entries(baseByGenre)) {
+    const target = TARGET_STORY_COUNTS_BY_GENRE[genreId] ?? baseStories.length;
+    const next = baseStories.map((s) => ({ ...s, story: extendStoryByTenLines(s.story) }));
+    const newTitles = NEW_TITLES_BY_GENRE[genreId] ?? [];
+    let i = 0;
+    while (next.length < target && baseStories.length > 0 && i < newTitles.length) {
+      const base = baseStories[i % baseStories.length]!;
+      next.push(cloneStoryWithNewTitle(base, newTitles[i]!));
+      i += 1;
+    }
+    expanded[genreId] = next;
+  }
+  return expanded;
+}
+
+export const SAMPLE_STORIES_BY_GENRE: Record<string, CombinedStoryData[]> =
+  buildExpandedStoryCatalog(BASE_STORIES_BY_GENRE);

@@ -1,48 +1,240 @@
-import { useState } from "react";
-import { SummariesData } from "@/lib/ai";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { SummariesData, SummaryOption } from "@/lib/ai";
+import type { QuestionResolution } from "@/lib/activityScoring";
+import QuickReflection from "@/components/QuickReflection";
 import { Button } from "@/components/ui/button";
+import EvidenceSentencePicker from "@/components/EvidenceSentencePicker";
+import { isEvidenceAcceptable } from "@/lib/evidenceValidation";
+import { logQuestionAttempt } from "@/lib/questionAttempts";
+import {
+  MAX_ACTIVITY_ATTEMPTS,
+  PASSAGE_INLINE_HINT,
+  remainingAttemptsHint,
+} from "@/lib/activityAttempts";
+import { explainSummaryCorrect } from "@/lib/explainCorrect";
+import {
+  pickInitialSummaryPresentation,
+  pickRetrySummaryPresentation,
+  summariesConceptVariants,
+} from "@/lib/questionVariants";
 
 interface Props {
   data: SummariesData;
+  mainStory: string;
+  storyKey: string;
+  userId: string | null;
   onCorrect: () => void;
+  onQuestionResolved?: (resolution: QuestionResolution) => void;
 }
 
-export default function Summaries({ data, onCorrect }: Props) {
-  const [selected, setSelected] = useState<number | null>(null);
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+function summariesDeckKey(data: SummariesData): string {
+  return JSON.stringify({
+    base: data.options,
+    variants: data.summaryVariants ?? null,
+  });
+}
 
-  const handleSelect = (index: number) => {
-    if (selected !== null) return;
-    setSelected(index);
-    const correct = data.options[index].correct;
-    setIsCorrect(correct);
-    if (correct) onCorrect();
+export default function Summaries({
+  data,
+  mainStory,
+  storyKey,
+  userId,
+  onCorrect,
+  onQuestionResolved,
+}: Props) {
+  const deckKey = summariesDeckKey(data);
+  const summarySets = useMemo(() => summariesConceptVariants(data), [deckKey]);
+
+  const [{ variantIdx, displayOptions }, setDeck] = useState(() =>
+    pickInitialSummaryPresentation(summarySets),
+  );
+
+  const [summaryChoice, setSummaryChoice] = useState<number | null>(null);
+  const [evidenceIdx, setEvidenceIdx] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [passed, setPassed] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const [reflecting, setReflecting] = useState(false);
+  const attemptRef = useRef(0);
+  const creditedRef = useRef(false);
+  const pendingReflectRef = useRef<{
+    fails: number;
+    answerOk: boolean;
+    evidenceOk: boolean;
+    prevVariantIdx: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const sets = summariesConceptVariants(data);
+    setDeck(pickInitialSummaryPresentation(sets));
+    setSummaryChoice(null);
+    setEvidenceIdx(null);
+    setFeedback(null);
+    setPassed(false);
+    setRevealed(false);
+    setReflecting(false);
+    attemptRef.current = 0;
+    creditedRef.current = false;
+    pendingReflectRef.current = null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deckKey]);
+
+  const correctOption = useMemo(() => summarySets[variantIdx]?.find((o) => o.correct), [summarySets, variantIdx]);
+
+  const finishReflectionAndRetry = () => {
+    const p = pendingReflectRef.current;
+    pendingReflectRef.current = null;
+    setReflecting(false);
+    if (!p) return;
+    const { fails, answerOk, evidenceOk, prevVariantIdx } = p;
+    setDeck(pickRetrySummaryPresentation(summarySets, prevVariantIdx));
+    setSummaryChoice(null);
+    setEvidenceIdx(null);
+
+    const hint = remainingAttemptsHint(fails);
+    if (!answerOk && !evidenceOk) {
+      setFeedback(hint ? `Almost — align your summary pick with a sentence that matches it. ${hint}` : "");
+    } else if (!answerOk) {
+      setFeedback(hint ? `Warm try — pick the summary that fits the whole arc of the story. ${hint}` : "");
+    } else {
+      setFeedback(hint ? `Summary choice works — tap a sentence that really supports it. ${hint}` : "");
+    }
   };
 
-  return (
-    <div className="space-y-3">
-      <h3 className="font-heading text-lg text-foreground">📝 Pick the Best Summary</h3>
-      {data.options.map((opt, i) => {
-        let variant: "outline" | "default" | "destructive" = "outline";
-        if (selected === i) variant = isCorrect ? "default" : "destructive";
-        else if (selected !== null && opt.correct) variant = "default";
+  const handleCheck = () => {
+    if (summaryChoice === null || evidenceIdx === null || passed || revealed || reflecting) return;
+    attemptRef.current += 1;
+    const chosen = displayOptions[summaryChoice];
+    const referenceForEvidence = chosen?.text ?? "";
+    const answerOk = Boolean(chosen?.correct);
+    const evidenceOk = isEvidenceAcceptable(mainStory, evidenceIdx, referenceForEvidence);
 
-        return (
-          <Button
-            key={i}
-            variant={variant}
-            onClick={() => handleSelect(i)}
-            disabled={selected !== null}
-            className="rounded-xl font-body text-left w-full h-auto py-4 px-5 whitespace-normal"
-          >
-            {opt.text}
-          </Button>
-        );
-      })}
-      {isCorrect !== null && (
-        <p className={`text-sm font-body ${isCorrect ? "text-primary" : "text-destructive"}`}>
-          {isCorrect ? "Perfect summary! 🌟" : "Not quite — the highlighted one is the best summary."}
-        </p>
+    if (userId) {
+      void logQuestionAttempt({
+        userId,
+        storyKey,
+        activityType: "summaries",
+        questionKey: "summaries:best-summary",
+        attemptNumber: attemptRef.current,
+        answerCorrect: answerOk,
+        evidenceCorrect: evidenceOk,
+      });
+    }
+
+    const ok = answerOk && evidenceOk;
+    if (ok) {
+      setPassed(true);
+      setFeedback("Perfect — your summary choice and evidence match. 🌟");
+      onQuestionResolved?.({
+        questionKey: "summary",
+        attemptsToCorrect: attemptRef.current,
+        evidenceApplies: true,
+        evidenceCorrect: true,
+      });
+      if (!creditedRef.current) {
+        creditedRef.current = true;
+        onCorrect();
+      }
+      return;
+    }
+
+    const fails = attemptRef.current;
+    if (fails >= MAX_ACTIVITY_ATTEMPTS) {
+      setRevealed(true);
+      setFeedback(null);
+      queueMicrotask(() =>
+        onQuestionResolved?.({
+          questionKey: "summary",
+          attemptsToCorrect: 0,
+          evidenceApplies: true,
+          evidenceCorrect: false,
+        }),
+      );
+      return;
+    }
+
+    pendingReflectRef.current = {
+      fails,
+      answerOk,
+      evidenceOk,
+      prevVariantIdx: variantIdx,
+    };
+    setReflecting(true);
+  };
+
+  const canSubmit = summaryChoice !== null && evidenceIdx !== null && !passed && !revealed && !reflecting;
+  const lockedOut = passed || revealed;
+  const freezeChoices = lockedOut || reflecting;
+
+  return (
+    <div className="space-y-4">
+      <h3 className="font-heading text-lg text-foreground">📝 Pick the Best Summary</h3>
+      <p className="text-sm text-muted-foreground font-body">
+        Choose an answer and tap a sentence that supports it — both must fit before you continue.
+      </p>
+
+      <EvidenceSentencePicker
+        story={mainStory}
+        selectedIndex={evidenceIdx}
+        onSelect={setEvidenceIdx}
+        disabled={freezeChoices}
+      />
+
+      <div className="space-y-2">
+        <p className="text-sm font-heading font-semibold text-foreground">Which summary is best?</p>
+        {displayOptions.map((opt: SummaryOption, i: number) => {
+          let variant: "outline" | "default" | "destructive" | "secondary" = "outline";
+          if (summaryChoice === i) variant = passed ? "default" : revealed ? "outline" : "secondary";
+          else if ((passed || revealed) && opt.correct) variant = "default";
+          return (
+            <Button
+              key={`${variantIdx}-${i}-${opt.text.slice(0, 32)}`}
+              variant={variant}
+              onClick={() => !freezeChoices && setSummaryChoice(i)}
+              disabled={freezeChoices}
+              className="rounded-xl font-body text-left w-full h-auto py-4 px-5 whitespace-normal"
+            >
+              {opt.text}
+            </Button>
+          );
+        })}
+      </div>
+
+      <Button
+        type="button"
+        className="clay-button bg-garden-success text-primary-foreground font-heading w-full rounded-xl"
+        disabled={!canSubmit}
+        onClick={handleCheck}
+      >
+        Check summary & evidence
+      </Button>
+
+      {reflecting && (
+        <QuickReflection className="mt-1" onContinue={() => finishReflectionAndRetry()} />
+      )}
+
+      {passed && feedback && (
+        <p className={`text-sm font-body text-primary`}>{feedback}</p>
+      )}
+
+      {revealed && correctOption && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 space-y-2">
+          <p className="text-sm font-heading font-semibold text-amber-950">
+            Here&apos;s the summary we&apos;d pick after {MAX_ACTIVITY_ATTEMPTS} tries — you&apos;re building skill!
+          </p>
+          <p className="text-sm font-body text-foreground">{correctOption.text}</p>
+          <p className="text-xs text-muted-foreground font-body leading-snug border-t border-amber-200/80 pt-2 mt-1">
+            Why this one: {explainSummaryCorrect(correctOption)}
+          </p>
+          <p className="text-xs text-muted-foreground font-body">
+            Notice sentences that echo these ideas — that habit makes summaries easier every time.
+          </p>
+          <p className="text-xs text-amber-950/85">{PASSAGE_INLINE_HINT}</p>
+        </div>
+      )}
+
+      {!passed && !revealed && !reflecting && feedback && (
+        <p className="text-sm font-body text-destructive">{feedback}</p>
       )}
     </div>
   );

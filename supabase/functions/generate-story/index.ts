@@ -10,17 +10,19 @@ function buildPrompt(level: number, genre: string): string {
 
 Then create ALL of the following activities based on that SINGLE story:
 
-1. VOCABULARY: Pick 5 challenging but grade-appropriate vocabulary words from the story. For each word, provide the correct meaning and 2 plausible but incorrect meanings. Also provide the 0-based index of the correct option.
+1. VOCABULARY: Pick 5 challenging but grade-appropriate vocabulary words from the story. Each word may use {"word","options":["correct","wrong1","wrong2"],"correctIndex":0} OR {"word","variants":[{"options":["correct","wrong1","wrong2"],"correctIndex":0},{"options":["correct","altWrong1","altWrong2"],"correctIndex":0}]} — keep difficulty equivalent across variants (same correct meaning).
 
 2. FACT vs OPINION: Create 5 statements related to the story - some facts and some opinions.
 
-3. SUMMARIES: Provide 3 possible summaries - only one should be the best/correct summary, the others should be too detailed, too vague, or slightly inaccurate.
+3. SUMMARIES: Provide 3 possible summaries - only one should be the best/correct summary. Optionally add "summaryVariants": [ alternate triples with the same pattern, same difficulty ].
 
-4. CHARACTER TRAITS: Ask 3 multiple-choice questions about the main character's traits. Each question should have 3 options with the 0-based index of the correct answer.
+4. CHARACTER TRAITS: Ask 3 multiple-choice trait questions; either {"question","options":[],"correctIndex"} or {"question","variants":[{"options":[],"correctIndex"},...]} with parallel difficulty.
 
 5. COMPARE & CONTRAST: Write a SECOND short story (about 100 words) that shares some similarities with the first but also has clear differences. Then write one comparing question and a sample answer.
 
-Return ONLY valid JSON in this exact format:
+Optional teaching hints (short strings): vocabulary words may include "whyCorrect"; each factOpinion statement may include "whyCorrect"; the correct summary option may include "whyCorrect"; character trait questions may include "whyCorrect"; compareContrast may include "sampleWhyCorrect".
+
+Return ONLY valid JSON (legacy single-option vocabulary/questions still allowed). Example shape:
 {"title":"...","genre":"...","story":"...","vocabulary":{"words":[{"word":"...","options":["correct","wrong1","wrong2"],"correctIndex":0},{"word":"...","options":["wrong","correct","wrong"],"correctIndex":1},{"word":"...","options":["wrong","wrong","correct"],"correctIndex":2},{"word":"...","options":["correct","wrong","wrong"],"correctIndex":0},{"word":"...","options":["wrong","correct","wrong"],"correctIndex":1}]},"factOpinion":{"statements":[{"text":"...","type":"fact"},{"text":"...","type":"opinion"},{"text":"...","type":"fact"},{"text":"...","type":"opinion"},{"text":"...","type":"fact"}]},"summaries":{"options":[{"text":"...","correct":false},{"text":"...","correct":true},{"text":"...","correct":false}]},"characterTraits":{"questions":[{"question":"...","options":["...","...","..."],"correctIndex":0},{"question":"...","options":["...","...","..."],"correctIndex":1},{"question":"...","options":["...","...","..."],"correctIndex":2}]},"compareContrast":{"story2":"...","question":"...","sampleAnswer":"..."}}`;
 }
 

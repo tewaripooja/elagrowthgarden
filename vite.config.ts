@@ -9,8 +9,9 @@ export default defineConfig(({ mode }) => ({
     // true = bind 0.0.0.0 so phones / other PCs can open http://<your-LAN-IP>:8080
     host: true,
     port: 8080,
+    // Leave overlay enabled so runtime errors are visible (blank screen otherwise).
     hmr: {
-      overlay: false,
+      overlay: true,
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),

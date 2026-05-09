@@ -4,7 +4,7 @@ export type PlantStage = "seed" | "sprout" | "leaves" | "bud" | "flower";
 export type ActivityMode = "vocabulary" | "compare-contrast" | "fact-opinion" | "summaries" | "character-traits";
 
 const STAGES: PlantStage[] = ["seed", "sprout", "leaves", "bud", "flower"];
-const STORAGE_KEY = "ela-garden-state";
+const STORAGE_KEY = "ela-garden-state-reset-20260507-v2";
 const PERFECT_DAYS_TO_LEVEL_UP = 7;
 
 const ALL_ACTIVITIES: ActivityMode[] = ["vocabulary", "compare-contrast", "fact-opinion", "summaries", "character-traits"];

@@ -1,0 +1,39 @@
+-- Growth analytics — copy/paste into Supabase SQL Editor or use psql with service_role.
+--
+-- TIMEZONE (baseline-sql todo):
+--   All DEPLOYED VIEWS (analytics_growth_*) use UTC calendar days/weeks/months so numbers
+--   match server defaults and are reproducible across operators.
+--   For local-calendar reporting (e.g. US teachers), bucket in SQL Editor using a named zone:
+--     (created_at at time zone 'America/New_York')::date
+--
+-- DEPLOYED VIEWS (grant: service_role only — see migration 20260509180000_growth_analytics_views.sql):
+--   analytics_growth_signups_daily / _weekly / _monthly
+--   analytics_growth_active_users_daily
+--   analytics_growth_daily_story_engagement
+--
+-- Quick checks:
+-- select * from analytics_growth_signups_daily order by signup_day desc limit 14;
+-- select * from analytics_growth_active_users_daily order by activity_day desc limit 14;
+-- select * from analytics_growth_daily_story_engagement order by completion_day desc limit 14;
+
+-- Example: same as view but signup day in America/New_York (ad-hoc; not a stored view)
+-- select
+--   ((u.created_at at time zone 'America/New_York'))::date as signup_day_local,
+--   count(*)::int as new_users
+-- from auth.users u
+-- group by 1
+-- order by 1 desc;
+
+-- KPI — story completion rate per day (learners with a “full” checklist vs any session row)
+-- select
+--   completion_day,
+--   distinct_users,
+--   sessions_all_five_activities_done,
+--   case when session_rows > 0
+--     then round(100.0 * sessions_all_five_activities_done::numeric / session_rows, 2)
+--     end as pct_sessions_fully_complete
+-- from analytics_growth_daily_story_engagement
+-- order by completion_day desc;
+
+-- KPI — AI spend has no first-party table here; track via your gateway billing dashboard
+-- (e.g. Lovable AI usage) and divide by active_users from analytics_growth_active_users_daily.
