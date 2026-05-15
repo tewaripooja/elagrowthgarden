@@ -42,8 +42,22 @@ import {
   type DailyStorySessionRow,
 } from "@/lib/dailyStorySession";
 import { applyReadingUtteranceVoice } from "@/lib/readingVoice";
+import {
+  canStartGuestStory,
+  clearGuestActiveStory,
+  getGuestActiveStory,
+  hasUsedGuestTrial,
+  markGuestStoryStarted,
+  saveGuestActiveStory,
+} from "@/lib/guestTrial";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+type ActivityLocationState = {
+  activityTab?: ActivityType;
+  fromReading?: boolean;
+  guestTrial?: boolean;
+};
 
 const ACTIVITY_TABS: { id: ActivityType; label: string; icon: React.ReactNode }[] = [
   { id: "vocabulary", label: "Vocabulary", icon: <BookOpen className="h-4 w-4" /> },
@@ -111,12 +125,9 @@ export default function Activity() {
   const { user } = useAuth();
   const gameState = useGameState();
 
-  const locationState = (location.state ?? null) as {
-    activityTab?: ActivityType;
-    fromReading?: boolean;
-  } | null;
+  const locationState = (location.state ?? null) as ActivityLocationState | null;
   /** Home "Reading" tile — show every activity tab. Any other tile — one activity first, then remaining only. */
-  const fromReadingHome = Boolean(locationState?.fromReading);
+  const fromReadingHome = Boolean(locationState?.fromReading ?? locationState?.guestTrial);
   const entryActivityTab: ActivityType | null =
     fromReadingHome
       ? null
@@ -152,6 +163,22 @@ export default function Activity() {
   const readingHomeFullUtteranceActiveRef = useRef(false);
   const fullStoryReadingStartedAtRef = useRef<number>(Date.now());
   const resolutionsRef = useRef<Record<string, QuestionResolution>>({});
+  const guestRestoreRanRef = useRef(false);
+
+  const redirectGuestToLogin = useCallback(
+    (message?: string) => {
+      if (message) {
+        toast.message(message, {
+          description: "Log in or create an account to read more stories and save your garden.",
+        });
+      }
+      navigate("/login", {
+        replace: true,
+        state: { from: { pathname: "/activity" }, reason: "guest_trial" },
+      });
+    },
+    [navigate],
+  );
 
   const storyKey = useMemo(
     () => (data ? `${data.title}::${data.genre}::r${round}` : ""),
@@ -257,6 +284,40 @@ export default function Activity() {
     void refreshDailySession();
   }, [refreshDailySession]);
 
+  /** Guests with no trial left and no in-progress story → login. */
+  useEffect(() => {
+    if (user?.id || data !== null) return;
+    if (canStartGuestStory()) return;
+    if (getGuestActiveStory()) return;
+    redirectGuestToLogin();
+  }, [user?.id, data, redirectGuestToLogin]);
+
+  /** Resume guest's in-progress free story after refresh. */
+  useEffect(() => {
+    if (user?.id || data !== null || guestRestoreRanRef.current) return;
+    const saved = getGuestActiveStory();
+    if (!saved) return;
+
+    guestRestoreRanRef.current = true;
+    lastStoryTitleRef.current = saved.story.title;
+    setRound(saved.round);
+    setData(saved.story);
+    setCompletedActivities(saved.completedActivities);
+    setReadingFlowComplete(saved.readingFlowComplete);
+  }, [user?.id, data]);
+
+  /** Persist guest story progress locally. */
+  useEffect(() => {
+    if (user?.id || !data) return;
+    saveGuestActiveStory({
+      story: data,
+      round,
+      completedActivities,
+      readingFlowComplete,
+      fromReadingHome,
+    });
+  }, [user?.id, data, round, completedActivities, readingFlowComplete, fromReadingHome]);
+
   useEffect(() => {
     if (data === null) resumeRanRef.current = false;
   }, [data]);
@@ -347,6 +408,11 @@ export default function Activity() {
     ACTIVITY_TABS.every((t) => dailySession!.completed_activities.includes(t.id));
 
   const loadContent = async (genreLabel: string) => {
+    if (!user?.id && !canStartGuestStory()) {
+      redirectGuestToLogin("Your free story is complete!");
+      return;
+    }
+
     perfectLogoutPromptRoundRef.current = null;
     setPerfectStoryLogoutOpen(false);
     setReadingFlowComplete(false);
@@ -393,6 +459,17 @@ export default function Activity() {
       setData(result);
       setRound(nextRound);
 
+      if (!user?.id) {
+        markGuestStoryStarted();
+        saveGuestActiveStory({
+          story: result,
+          round: nextRound,
+          completedActivities: {},
+          readingFlowComplete: false,
+          fromReadingHome,
+        });
+      }
+
       if (entryActivityTab && ACTIVITY_TABS.some((t) => t.id === entryActivityTab)) {
         setActiveTab(entryActivityTab);
       } else {
@@ -407,6 +484,11 @@ export default function Activity() {
   };
 
   const handleNextStory = () => {
+    if (!user?.id) {
+      redirectGuestToLogin("Sign in to read your next story!");
+      return;
+    }
+
     if (user?.id && data && !ACTIVITY_TABS.every((t) => completedActivities[t.id])) {
       toast.message("Finish today's story first", {
         description: "Submit all activities for this story today before leaving.",
@@ -416,6 +498,9 @@ export default function Activity() {
     perfectLogoutPromptRoundRef.current = null;
     setPerfectStoryLogoutOpen(false);
     setReadingFlowComplete(false);
+    if (!user?.id) {
+      clearGuestActiveStory();
+    }
     setData(null);
     setCorrectCounts({});
     setCompletedActivities({});
@@ -510,8 +595,12 @@ export default function Activity() {
 
   const handlePerfectStoryGoHome = useCallback(() => {
     setPerfectStoryLogoutOpen(false);
+    if (!user?.id && hasUsedGuestTrial()) {
+      redirectGuestToLogin("Sign in to keep growing your garden!");
+      return;
+    }
     navigate("/");
-  }, [navigate]);
+  }, [navigate, user?.id, redirectGuestToLogin]);
 
   const highlightWords = (story: string, words: { word: string }[]) => {
     let result = story;
@@ -557,10 +646,16 @@ export default function Activity() {
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <Button
               variant="ghost"
-              onClick={() => navigate("/")}
+              onClick={() => {
+                if (!user?.id && hasUsedGuestTrial()) {
+                  redirectGuestToLogin("Sign in to continue your adventure!");
+                  return;
+                }
+                navigate(user?.id ? "/" : "/login");
+              }}
               className="min-h-[48px] rounded-2xl font-heading bg-white/20 hover:bg-white/30 text-white border-0 shadow-none"
             >
-              <ArrowLeft className="h-5 w-5 mr-1" /> Home
+              <ArrowLeft className="h-5 w-5 mr-1" /> {user?.id ? "Home" : "Sign in"}
             </Button>
 
             <div className="flex items-center gap-2 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]">
@@ -606,7 +701,8 @@ export default function Activity() {
                         disabled={
                           loadingStory ||
                           (user?.id && !dailySessionReady) ||
-                          (user?.id && todaysStoryFullyComplete)
+                          (user?.id && todaysStoryFullyComplete) ||
+                          (!user?.id && !canStartGuestStory())
                         }
                         className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl p-4 text-center min-h-[128px] md:min-h-[140px] transition-all duration-200 hover:scale-[1.04] active:scale-[0.98] hover:-translate-y-0.5 ${g.tileClass}`}
                       >

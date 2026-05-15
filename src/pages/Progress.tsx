@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import DynamicSky from "@/components/DynamicSky";
-import { ArrowLeft, Trophy } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Garden from "@/components/Garden";
 import { Button } from "@/components/ui/button";
 import { useGameState, type StoryRecord } from "@/hooks/useGameState";
@@ -89,12 +89,6 @@ export default function Progress() {
             <h1 className="font-heading text-3xl md:text-4xl font-bold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
               My Progress 🏆
             </h1>
-          </div>
-          <div className="mt-3 flex items-center gap-2 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.25)]">
-            <Trophy className="h-6 w-6 text-amber-300 shrink-0" aria-hidden />
-            <span className="font-heading text-lg md:text-xl font-semibold tracking-tight">
-              Grade {gameState.level}
-            </span>
           </div>
         </div>
 

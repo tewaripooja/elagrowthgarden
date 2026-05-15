@@ -21,13 +21,15 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-type LocationState = { from?: { pathname: string } };
+type LocationState = { from?: { pathname: string }; reason?: string };
 
 export default function Login() {
   const { session, loading } = useAuth();
   const location = useLocation();
   const [submitting, setSubmitting] = useState(false);
-  const from = (location.state as LocationState | null)?.from?.pathname ?? "/";
+  const locationState = location.state as LocationState | null;
+  const from = locationState?.from?.pathname ?? "/";
+  const guestTrialEnded = locationState?.reason === "guest_trial";
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -91,7 +93,11 @@ export default function Login() {
         <Card className="w-full max-w-md border-white/20 bg-white/95 shadow-lg backdrop-blur-sm">
           <CardHeader className="space-y-1">
             <CardTitle className="font-heading text-2xl text-emerald-950">Log in</CardTitle>
-            <CardDescription>Use your email or Google to continue your garden adventure.</CardDescription>
+            <CardDescription>
+              {guestTrialEnded
+                ? "You've tried your free story! Sign in to read more stories and save your garden progress."
+                : "Use your email or Google to continue your garden adventure."}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button type="button" variant="outline" className="w-full" onClick={() => void signInWithGoogle()}>
@@ -146,8 +152,11 @@ export default function Login() {
                 Create an account
               </Link>
             </p>
-            <Link to="/" className="text-center text-sm text-muted-foreground hover:text-foreground">
-              ← Back to home
+            <Link
+              to={guestTrialEnded ? "/signup" : "/"}
+              className="text-center text-sm text-muted-foreground hover:text-foreground"
+            >
+              {guestTrialEnded ? "Create an account instead →" : "← Back to home"}
             </Link>
           </CardFooter>
         </Card>
