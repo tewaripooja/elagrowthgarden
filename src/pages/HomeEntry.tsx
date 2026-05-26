@@ -1,14 +1,12 @@
-import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import DynamicSky from "@/components/DynamicSky";
-import { canStartGuestStory } from "@/lib/guestTrial";
 import { PAGE_SHELL_GRADIENT } from "@/lib/pageTheme";
 import { cn } from "@/lib/utils";
 import Index from "./Index";
 
-/** Logged-in home, or guest trial redirect to Story Time, or login after free story. */
+/** Home activity grid for signed-in and guest users. */
 export default function HomeEntry() {
-  const { session, loading } = useAuth();
+  const { loading } = useAuth();
 
   if (loading) {
     return (
@@ -20,19 +18,5 @@ export default function HomeEntry() {
     );
   }
 
-  if (session) {
-    return <Index />;
-  }
-
-  if (canStartGuestStory()) {
-    return (
-      <Navigate
-        to="/activity"
-        replace
-        state={{ fromReading: true, guestTrial: true }}
-      />
-    );
-  }
-
-  return <Navigate to="/login" replace state={{ reason: "guest_trial" }} />;
+  return <Index />;
 }

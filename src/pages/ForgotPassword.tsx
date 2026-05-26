@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -16,24 +16,17 @@ import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   email: z.string().email("Enter a valid email"),
-  password: z.string().min(6, "At least 6 characters"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-type LocationState = { from?: { pathname: string }; reason?: string };
-
-export default function Login() {
+export default function ForgotPassword() {
   const { session, loading } = useAuth();
-  const location = useLocation();
   const [submitting, setSubmitting] = useState(false);
-  const locationState = location.state as LocationState | null;
-  const from = locationState?.from?.pathname ?? "/";
-  const guestTrialEnded = locationState?.reason === "guest_trial";
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: "" },
   });
 
   if (loading) {
@@ -47,26 +40,23 @@ export default function Login() {
   }
 
   if (session) {
-    return <Navigate to={from} replace />;
+    return <Navigate to="/" replace />;
   }
+
+  const redirectTo = `${window.location.origin}/auth/callback`;
 
   const onSubmit = async (values: FormValues) => {
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: values.email.trim(),
-        password: values.password,
+      const { data, error } = await supabase.auth.resetPasswordForEmail(values.email.trim(), {
+        redirectTo,
       });
       if (error) {
-        const msg = error.message?.toLowerCase() ?? "";
-        if (msg.includes("email not confirmed")) {
-          toast.error("Confirm your email first. Check your inbox or sign up again to resend.");
-        } else {
-          toast.error(error.message);
-        }
+        toast.error(error.message);
         return;
       }
-      toast.success("Welcome back!");
+      toast.success("Check your email for a password reset link.");
+      form.reset();
     } finally {
       setSubmitting(false);
     }
@@ -82,12 +72,8 @@ export default function Login() {
       >
         <Card className="w-full max-w-md border-white/20 bg-white/95 shadow-lg backdrop-blur-sm">
           <CardHeader className="space-y-1">
-            <CardTitle className="font-heading text-2xl text-emerald-950">Log in</CardTitle>
-            <CardDescription>
-              {guestTrialEnded
-                ? "You've tried your free story! Sign in to read more stories and save your garden progress."
-                : "Use your email to continue your garden adventure."}
-            </CardDescription>
+            <CardTitle className="font-heading text-2xl text-emerald-950">Reset your password</CardTitle>
+            <CardDescription>Enter the email attached to your account — we'll send a reset link there.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Form {...form}>
@@ -105,43 +91,17 @@ export default function Login() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" autoComplete="current-password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex justify-end">
-                  <Link to="/forgot-password" className="text-sm text-emerald-700 hover:underline">
-                    Forgot password?
-                  </Link>
-                </div>
                 <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting ? "Signing in…" : "Sign in"}
+                  {submitting ? "Sending…" : "Send reset email"}
                 </Button>
               </form>
             </Form>
           </CardContent>
           <CardFooter className="flex flex-col gap-2 border-t pt-6">
             <p className="text-center text-sm text-muted-foreground">
-              New here?{" "}
-              <Link to="/signup" className="font-medium text-emerald-700 underline-offset-4 hover:underline">
-                Create an account
-              </Link>
+              Remembered your password? <Link to="/login" className="font-medium text-emerald-700 underline-offset-4 hover:underline">Sign in</Link>
             </p>
-            <Link
-              to={guestTrialEnded ? "/signup" : "/"}
-              className="text-center text-sm text-muted-foreground hover:text-foreground"
-            >
-              {guestTrialEnded ? "Create an account instead →" : "← Back to home"}
-            </Link>
+            <Link to="/" className="text-center text-sm text-muted-foreground hover:text-foreground">← Back to home</Link>
           </CardFooter>
         </Card>
       </div>

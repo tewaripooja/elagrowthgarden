@@ -40,8 +40,8 @@ export async function fetchTodaysStorySession(userId: string): Promise<DailyStor
   return data as DailyStorySessionRow | null;
 }
 
-/** Start today’s story or confirm resume of the same fingerprint. */
-export async function claimDailyStorySession(
+/** Record the learner’s current story for today (progress / analytics; no one-story lock). */
+export async function saveDailyStorySession(
   userId: string,
   params: {
     fingerprint: string;
@@ -50,23 +50,12 @@ export async function claimDailyStorySession(
     storyRound: number;
     storySnapshot: Json | null;
   },
-): Promise<{ ok: true } | { ok: false; reason: "other_story_locked" }> {
+): Promise<void> {
   const day = utcCalendarDate();
-  const { data: existing, error: selErr } = await supabase
-    .from("user_daily_story_session")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("completion_day", day)
-    .maybeSingle();
-
-  if (selErr) {
-    console.error("claimDailyStorySession select:", selErr.message);
-    return { ok: false, reason: "other_story_locked" };
-  }
-
-  if (!existing) {
-    const { error } = await supabase.from("user_daily_story_session").insert({
+  const { error } = await supabase.from("user_daily_story_session").upsert(
+    {
       user_id: userId,
+      completion_day: day,
       story_fingerprint: params.fingerprint,
       genre_label: params.genreLabel,
       story_title: params.storyTitle,
@@ -74,21 +63,14 @@ export async function claimDailyStorySession(
       completed_activities: [],
       reading_done: false,
       story_snapshot: params.storySnapshot,
-    });
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,completion_day" },
+  );
 
-    if (error) {
-      console.error("claimDailyStorySession insert:", error.message);
-      return { ok: false, reason: "other_story_locked" };
-    }
-    return { ok: true };
+  if (error) {
+    console.error("saveDailyStorySession:", error.message);
   }
-
-  const row = existing as DailyStorySessionRow;
-  if (row.story_fingerprint === params.fingerprint) {
-    return { ok: true };
-  }
-
-  return { ok: false, reason: "other_story_locked" };
 }
 
 export async function appendDailyStoryCompletedActivity(userId: string, activityType: string): Promise<void> {
@@ -120,3 +102,4 @@ export async function setDailyStoryReadingDone(userId: string, done: boolean): P
     .eq("user_id", userId)
     .eq("completion_day", day);
 }
+

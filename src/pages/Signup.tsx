@@ -46,14 +46,6 @@ export default function Signup() {
 
   const redirectTo = `${window.location.origin}/auth/callback`;
 
-  const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo },
-    });
-    if (error) toast.error(error.message);
-  };
-
   const onSubmit = async (values: FormValues) => {
     setSubmitting(true);
     try {
@@ -88,20 +80,9 @@ export default function Signup() {
         <Card className="w-full max-w-md border-white/20 bg-white/95 shadow-lg backdrop-blur-sm">
           <CardHeader className="space-y-1">
             <CardTitle className="font-heading text-2xl text-emerald-950">Sign up</CardTitle>
-            <CardDescription>Create an account with email or Google. We will email you to verify new accounts.</CardDescription>
+            <CardDescription>Create an account with your email. We will email you to verify new accounts.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button type="button" variant="outline" className="w-full" onClick={() => void signInWithGoogle()}>
-              Continue with Google
-            </Button>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Or email</span>
-              </div>
-            </div>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
