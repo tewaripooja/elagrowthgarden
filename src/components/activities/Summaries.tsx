@@ -12,6 +12,7 @@ import {
   remainingAttemptsHint,
 } from "@/lib/activityAttempts";
 import { explainSummaryCorrect } from "@/lib/explainCorrect";
+import { playWrongSound } from "@/lib/sounds";
 import {
   pickInitialSummaryPresentation,
   pickRetrySummaryPresentation,
@@ -25,6 +26,7 @@ interface Props {
   userId: string | null;
   onCorrect: () => void;
   onQuestionResolved?: (resolution: QuestionResolution) => void;
+  vocabularyWords?: { word: string; definition?: string }[];
 }
 
 function summariesDeckKey(data: SummariesData): string {
@@ -41,6 +43,7 @@ export default function Summaries({
   userId,
   onCorrect,
   onQuestionResolved,
+  vocabularyWords = [],
 }: Props) {
   const deckKey = summariesDeckKey(data);
   const summarySets = useMemo(() => summariesConceptVariants(data), [deckKey]);
@@ -139,6 +142,7 @@ export default function Summaries({
     }
 
     const fails = attemptRef.current;
+    playWrongSound();
     if (fails >= MAX_ACTIVITY_ATTEMPTS) {
       setRevealed(true);
       setFeedback(null);
@@ -178,6 +182,7 @@ export default function Summaries({
         selectedIndex={evidenceIdx}
         onSelect={setEvidenceIdx}
         disabled={freezeChoices}
+        vocabularyWords={vocabularyWords}
       />
 
       <div className="space-y-2">

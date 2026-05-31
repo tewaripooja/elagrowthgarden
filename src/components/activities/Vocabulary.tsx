@@ -8,6 +8,7 @@ import {
   remainingAttemptsHint,
 } from "@/lib/activityAttempts";
 import { explainVocabularyCorrect } from "@/lib/explainCorrect";
+import { playWrongSound } from "@/lib/sounds";
 import type { QuestionResolution } from "@/lib/activityScoring";
 import type { McqSlice } from "@/lib/questionVariants";
 import {
@@ -120,6 +121,7 @@ export default function Vocabulary({ data, onCorrect, onQuestionResolved }: Prop
     }
 
     const fails = wrongCounts[wordIndex] + 1;
+    playWrongSound();
     setDeck((d) => {
       const wc = [...d.wrongCounts];
       wc[wordIndex] = fails;

@@ -9,6 +9,7 @@ import {
   remainingAttemptsHint,
 } from "@/lib/activityAttempts";
 import { explainFactOpinionCorrect } from "@/lib/explainCorrect";
+import { playWrongSound } from "@/lib/sounds";
 
 interface Props {
   data: FactOpinionData;
@@ -94,6 +95,7 @@ export default function FactOpinion({ data, onCorrect, onQuestionResolved }: Pro
     }
 
     const fails = wrongCounts[index] + 1;
+    playWrongSound();
     setWrongCounts((prev) => {
       const n = [...prev];
       n[index] = fails;

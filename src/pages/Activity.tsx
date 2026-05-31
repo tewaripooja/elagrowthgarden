@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import DynamicSky from "@/components/DynamicSky";
-import { ArrowLeft, BookOpen, Pencil, Star, Users, FileText, Scale, Volume2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Pencil, Star, Users, FileText, Scale, Volume2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,7 +30,6 @@ import {
   type ReadingMetrics,
 } from "@/lib/activityScoring";
 import { countWords, minimumReadingSeconds } from "@/lib/storySections";
-import { PAGE_SHELL_GRADIENT } from "@/lib/pageTheme";
 import { persistActivityQuestionScores } from "@/lib/questionScoreBreakdown";
 import type { Json } from "@/integrations/supabase/types";
 import {
@@ -39,7 +38,7 @@ import {
   setDailyStoryReadingDone,
   storyFingerprint,
 } from "@/lib/dailyStorySession";
-import { applyReadingUtteranceVoice } from "@/lib/readingVoice";
+import { speakExpressive } from "@/lib/readingVoice";
 import {
   clearGuestActiveStory,
   getGuestActiveStory,
@@ -47,6 +46,7 @@ import {
 } from "@/lib/guestTrial";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { playCorrectSound, playStarSound, playWrongSound } from "@/lib/sounds";
 
 type ActivityLocationState = {
   activityTab?: ActivityType;
@@ -113,6 +113,23 @@ function displayStoryTitle(title: string) {
   return title.replace(/\s+\(Story\s+\d+\)$/i, "");
 }
 
+/** Pull the simple definition text from a VocabularyWord (correct option). */
+function getVocabDefinition(w: import("@/lib/ai").VocabularyWord): string {
+  if ("variants" in w && w.variants.length > 0) {
+    return w.variants[0].options[w.variants[0].correctIndex] ?? "";
+  }
+  if ("options" in w) {
+    return (w as { options: string[]; correctIndex: number }).options[
+      (w as { options: string[]; correctIndex: number }).correctIndex
+    ] ?? "";
+  }
+  return "";
+}
+
+function toVocabWithDefs(words: import("@/lib/ai").VocabularyWord[]) {
+  return words.map((w) => ({ word: w.word, definition: getVocabDefinition(w) }));
+}
+
 export default function Activity() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -150,7 +167,9 @@ export default function Activity() {
   const [readingMetrics, setReadingMetrics] = useState<ReadingMetrics | null>(null);
   /** Reading tile path: full-story speech synthesis active (word taps ignored until done). */
   const [readingHomeFullSpeaking, setReadingHomeFullSpeaking] = useState(false);
+  const [readingHomeHighlightRange, setReadingHomeHighlightRange] = useState<{ start: number; end: number } | null>(null);
   const readingHomeFullUtteranceActiveRef = useRef(false);
+  const cancelReadingHomeSpeechRef = useRef<() => void>(() => {});
   const fullStoryReadingStartedAtRef = useRef<number>(Date.now());
   const resolutionsRef = useRef<Record<string, QuestionResolution>>({});
   const guestRestoreRanRef = useRef(false);
@@ -180,8 +199,11 @@ export default function Activity() {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
+    cancelReadingHomeSpeechRef.current();
+    cancelReadingHomeSpeechRef.current = () => {};
     readingHomeFullUtteranceActiveRef.current = false;
     setReadingHomeFullSpeaking(false);
+    setReadingHomeHighlightRange(null);
     const elapsedSeconds = Math.max(
       1,
       Math.round((Date.now() - fullStoryReadingStartedAtRef.current) / 1000),
@@ -198,26 +220,23 @@ export default function Activity() {
     if (!text || typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
     if (readingHomeFullUtteranceActiveRef.current) {
-      window.speechSynthesis.cancel();
+      cancelReadingHomeSpeechRef.current();
+      cancelReadingHomeSpeechRef.current = () => {};
       readingHomeFullUtteranceActiveRef.current = false;
       setReadingHomeFullSpeaking(false);
+      setReadingHomeHighlightRange(null);
       return;
     }
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    applyReadingUtteranceVoice(utterance);
     readingHomeFullUtteranceActiveRef.current = true;
     setReadingHomeFullSpeaking(true);
-    utterance.onend = () => {
-      readingHomeFullUtteranceActiveRef.current = false;
-      setReadingHomeFullSpeaking(false);
-    };
-    utterance.onerror = () => {
-      readingHomeFullUtteranceActiveRef.current = false;
-      setReadingHomeFullSpeaking(false);
-    };
-    window.speechSynthesis.speak(utterance);
+    const cancel = speakExpressive(
+      text,
+      (start, end) => setReadingHomeHighlightRange({ start, end }),
+      () => { readingHomeFullUtteranceActiveRef.current = false; setReadingHomeFullSpeaking(false); setReadingHomeHighlightRange(null); },
+      () => { readingHomeFullUtteranceActiveRef.current = false; setReadingHomeFullSpeaking(false); setReadingHomeHighlightRange(null); },
+    );
+    cancelReadingHomeSpeechRef.current = cancel;
   }, [data?.story]);
 
   useEffect(() => {
@@ -370,6 +389,7 @@ export default function Activity() {
   };
 
   const handleCorrect = useCallback((activityType: ActivityType) => {
+    playCorrectSound();
     gameState.handleCorrectAnswer();
     setCorrectCounts((prev) => ({ ...prev, [activityType]: (prev[activityType] || 0) + 1 }));
   }, [gameState]);
@@ -416,6 +436,7 @@ export default function Activity() {
       const starBlockedForReadingVocab = fromReadingHome && activityType === "vocabulary";
       const earnsStar = perfect && avgFinal >= STAR_SCORE_THRESHOLD && !starBlockedForReadingVocab;
       if (earnsStar) {
+        playStarSound();
         gameState.awardPerfectActivity();
         setRecentStar(true);
         setTimeout(() => setRecentStar(false), 2000);
@@ -459,23 +480,14 @@ export default function Activity() {
     navigate("/");
   }, [navigate]);
 
-  const highlightWords = (story: string, words: { word: string }[]) => {
-    let result = story;
-    words?.forEach(({ word }) => {
-      const regex = new RegExp(`\\b(${word})\\b`, "gi");
-      result = result.replace(regex, `<strong class="text-accent font-bold">$1</strong>`);
-    });
-    return result;
-  };
-
   return (
     <DynamicSky>
       <Dialog open={perfectStoryLogoutOpen} onOpenChange={setPerfectStoryLogoutOpen}>
         <DialogContent className="font-heading sm:rounded-2xl border-2 border-emerald-200/80 bg-card/95 backdrop-blur-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl">Perfect story</DialogTitle>
+            <DialogTitle className="text-xl">🎉 Perfect Story!</DialogTitle>
             <DialogDescription className="text-base text-foreground/90 pt-1">
-              You answered every question correctly for all activities in this story. Amazing work!
+              You answered every question correctly for all activities. You're a superstar! 🌟
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-2">
@@ -485,69 +497,123 @@ export default function Activity() {
               className="font-heading rounded-xl"
               onClick={() => setPerfectStoryLogoutOpen(false)}
             >
-              Keep reading
+              Keep reading 📖
             </Button>
             <Button
               type="button"
               className="font-heading rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
               onClick={handlePerfectStoryGoHome}
             >
-              Back to home
+              Back to Garden 🌱
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <div className={cn("min-h-screen w-full flex flex-col pb-8", PAGE_SHELL_GRADIENT)}>
-        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 pt-4 md:pt-6 pb-6 border-b border-white/25">
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/")}
-              className="min-h-[48px] rounded-2xl font-heading bg-white/20 hover:bg-white/30 text-white border-0 shadow-none"
-            >
-              <ArrowLeft className="h-5 w-5 mr-1" /> Home
-            </Button>
+      <div className="min-h-screen w-full flex flex-col pb-8">
+        {/* ── COLORFUL HEADER ── */}
+        <div
+          style={{
+            background: data
+              ? "linear-gradient(135deg,#5BBD4E 0%,#27ae60 60%,#1abc9c 100%)"
+              : "linear-gradient(135deg,#5bb8f5 0%,#7ec8f8 60%,#a8ddf7 100%)",
+            transition: "background .5s ease",
+          }}
+          className="w-full px-4 md:px-8 pt-4 pb-5 shadow-md"
+        >
+          <div className="w-full max-w-4xl mx-auto">
+            <div className="flex flex-wrap items-center gap-3 mb-3">
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                style={{
+                  background:"rgba(255,255,255,.25)",
+                  border:"none",
+                  borderRadius:14,
+                  color:"#fff",
+                  fontWeight:800,
+                  fontSize:13,
+                  padding:"8px 16px",
+                  cursor:"pointer",
+                  display:"flex",
+                  alignItems:"center",
+                  gap:6,
+                  fontFamily:"'Nunito',sans-serif",
+                  transition:"background .15s",
+                }}
+                onMouseEnter={(e)=>{ (e.currentTarget as HTMLButtonElement).style.background="rgba(255,255,255,.38)"; }}
+                onMouseLeave={(e)=>{ (e.currentTarget as HTMLButtonElement).style.background="rgba(255,255,255,.25)"; }}
+              >
+                <ArrowLeft size={16} /> Garden
+              </button>
 
-            <div className="flex items-center gap-2 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]">
-              <BookOpen className="h-6 w-6 shrink-0" />
-              <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">
-                Story Time
-              </h1>
+              <div className="flex items-center gap-2 text-white" style={{ textShadow:"0 1px 4px rgba(0,0,0,.2)" }}>
+                <BookOpen className="h-6 w-6 shrink-0" />
+                <h1 className="font-heading text-xl md:text-2xl font-bold tracking-tight">
+                  {data ? `📖 ${displayStoryTitle(data.title)}` : "Story Time"}
+                </h1>
+              </div>
+
+              {/* Star badge */}
+              <div
+                className={`ml-auto star-badge ${recentStar ? "glowing" : ""}`}
+                style={{ flexShrink: 0 }}
+              >
+                <Star className="h-6 w-6 text-amber-100 fill-current drop-shadow-md" />
+                <span className="absolute -bottom-1 -right-1 bg-violet-950 text-amber-100 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {gameState.stars}
+                </span>
+              </div>
             </div>
 
-            <div className={`ml-auto star-badge ${recentStar ? "glowing" : ""}`}>
-              <Star className="h-6 w-6 text-amber-100 fill-current drop-shadow-md" />
-              <span className="absolute -bottom-1 -right-1 bg-violet-950 text-amber-100 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                {gameState.stars}
-              </span>
-            </div>
+            {/* Genre + progress bar */}
+            {data && (
+              <>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:7 }}>
+                  <span style={{ background:"rgba(255,255,255,.3)", borderRadius:20, padding:"3px 12px", fontSize:11, fontWeight:800, color:"#fff" }}>
+                    {data.genre}
+                  </span>
+                  {readingFlowComplete && (
+                    <span style={{ background:"rgba(255,255,255,.3)", borderRadius:20, padding:"3px 10px", fontSize:11, fontWeight:800, color:"#fff", display:"flex", alignItems:"center", gap:4 }}>
+                      <CheckCircle2 size={12} /> Reading done ✅
+                    </span>
+                  )}
+                </div>
+                <div style={{ background:"rgba(255,255,255,.35)", borderRadius:10, height:11, overflow:"hidden" }}>
+                  <div
+                    style={{
+                      height:"100%",
+                      background:"rgba(255,255,255,.9)",
+                      borderRadius:10,
+                      transition:"width .6s cubic-bezier(.34,1.56,.64,1)",
+                      width:`${progressPercent}%`,
+                    }}
+                  />
+                </div>
+                <p className="text-white/90 mt-1.5" style={{ fontSize:10, fontWeight:700, textAlign:"right" }}>
+                  🌱 {gameState.currentStage} · 🌸 {gameState.flowers} flowers
+                </p>
+              </>
+            )}
           </div>
-
-          <div className="progress-bar-track bg-white/40">
-            <div className="progress-bar-fill" style={{ width: `${progressPercent}%` }} />
-          </div>
-          <p className="text-xs text-white/85 mt-2 text-right drop-shadow-sm">
-            🌱 Growing: {gameState.currentStage} · 🌸 Flowers: {gameState.flowers}
-          </p>
         </div>
 
         <div className="w-full max-w-4xl mx-auto px-4 md:px-6 flex-1 pt-6 md:pt-8">
             {!data && (
               <div className="w-full space-y-6 md:space-y-8 pb-4">
                   <div className="flex justify-center gap-2 text-3xl drop-shadow-md" aria-hidden>
-                    <span>✨</span>
-                    <span>🌈</span>
-                    <span>✨</span>
+                    <span>✨</span><span>🌈</span><span>✨</span>
                   </div>
-                  <h2 className="font-heading text-3xl md:text-4xl font-extrabold text-center text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+                  <h2 className="font-heading text-2xl md:text-3xl font-extrabold text-center text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
                     {storyPickerHeading}
                   </h2>
-                  {loadingStory ? (
-                    <p className="text-center text-sm text-white/90 font-medium drop-shadow-sm">
-                      Opening your story…
-                    </p>
-                  ) : null}
+                  {loadingStory && (
+                    <div className="flex justify-center">
+                      <div className="reading-timer-pill animate-reading-timer">
+                        📖 Opening your story…
+                      </div>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
                     {STORY_GENRES.map((g) => (
                       <button
@@ -563,12 +629,8 @@ export default function Activity() {
                             : "hover:scale-[1.04] active:scale-[0.98] hover:-translate-y-0.5",
                         )}
                       >
-                        <span className="text-4xl drop-shadow-sm" aria-hidden>
-                          {g.emoji}
-                        </span>
-                        <span className="font-heading text-sm md:text-base font-bold leading-tight drop-shadow-sm">
-                          {g.label}
-                        </span>
+                        <span className="text-4xl drop-shadow-sm" aria-hidden>{g.emoji}</span>
+                        <span className="font-heading text-sm md:text-base font-bold leading-tight drop-shadow-sm">{g.label}</span>
                         <span className="text-[11px] md:text-xs font-medium opacity-85 leading-snug">{g.hint}</span>
                       </button>
                     ))}
@@ -605,9 +667,10 @@ export default function Activity() {
                 <div className="mt-3 max-w-none">
                   <ReadingRichParagraph
                     text={data.story ?? ""}
-                    vocabularyWords={data.vocabulary?.words ?? []}
+                    vocabularyWords={toVocabWithDefs(data.vocabulary?.words ?? [])}
                     extraKeyPhrases={data.readingExtras?.keyPhrases}
                     autoHighlightOpening
+                    highlightRange={readingHomeFullSpeaking ? readingHomeHighlightRange : null}
                   />
                 </div>
                 <div className="mt-5 flex justify-end">
@@ -647,131 +710,108 @@ export default function Activity() {
                       </span>
                     </div>
                   </div>
-                  <p
-                    className="font-body text-base sm:text-lg leading-relaxed sm:leading-loose text-foreground mt-4 max-w-none"
-                    dangerouslySetInnerHTML={{
-                      __html: activeTab === "vocabulary"
-                        ? highlightWords(data.story ?? "", data.vocabulary?.words || [])
-                        : (data.story ?? ""),
-                    }}
+                  <ReadingRichParagraph
+                    className="font-body mt-4"
+                    text={data.story ?? ""}
+                    vocabularyWords={toVocabWithDefs(data.vocabulary?.words ?? [])}
+                    extraKeyPhrases={data.readingExtras?.keyPhrases}
                   />
                 </div>
 
-                {/* Activity Tabs — non-Reading home: one activity until submitted, then remaining incomplete only */}
+                {/* Activity Tabs */}
                 {visibleActivityIds.length > 0 ? (
                   <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ActivityType)}>
-                    <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-white/75 backdrop-blur-md p-2 rounded-xl border border-white/50 mb-4 shadow-sm">
+                    <TabsList
+                      className="w-full flex flex-wrap h-auto gap-1.5 p-2 rounded-2xl mb-5 shadow-sm"
+                      style={{ background:"rgba(255,255,255,.85)", backdropFilter:"blur(8px)", border:"2px solid rgba(255,255,255,.6)" }}
+                    >
                       {ACTIVITY_TABS.filter((tab) => visibleActivityIds.includes(tab.id)).map((tab) => (
                         <TabsTrigger
                           key={tab.id}
                           value={tab.id}
-                          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-heading data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                          className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-heading data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
                         >
                           {tab.icon}
                           <span className="hidden sm:inline">{tab.label}</span>
-                          {completedActivities[tab.id] && <span className="text-[10px]">✅</span>}
+                          {completedActivities[tab.id] && (
+                            <span className="text-[10px] ml-0.5">✅</span>
+                          )}
                         </TabsTrigger>
                       ))}
                     </TabsList>
 
-                    <TabsContent value="vocabulary">
-                      <Vocabulary
-                        data={data.vocabulary}
-                        onCorrect={() => handleCorrect("vocabulary")}
-                        onQuestionResolved={(r) => handleQuestionResolved("vocabulary", r)}
-                      />
-                      {!completedActivities["vocabulary"] && (
-                        <button
-                          type="button"
-                          disabled={submittingActivity === "vocabulary"}
-                          onClick={() => void handleCompleteActivity("vocabulary")}
-                          className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading mt-4 w-full disabled:opacity-50 disabled:pointer-events-none"
-                        >
-                          {submittingActivity === "vocabulary" ? "Saving…" : "Submit Vocabulary ✅"}
-                        </button>
-                      )}
-                    </TabsContent>
+                    {/* Per-tab: activity + submit button */}
+                    {(["vocabulary","fact-opinion","summaries","character-traits","compare-contrast"] as ActivityType[]).map((id) => {
+                      const labels: Record<ActivityType, string> = {
+                        vocabulary: "Submit Vocabulary ✅",
+                        "fact-opinion": "Submit Fact vs Opinion ✅",
+                        summaries: "Submit Summary ✅",
+                        "character-traits": "Submit Character Traits ✅",
+                        "compare-contrast": "Submit Compare & Contrast ✅",
+                      };
+                      return (
+                        <TabsContent key={id} value={id}>
+                          {id === "vocabulary" && (
+                            <Vocabulary data={data.vocabulary} onCorrect={() => handleCorrect("vocabulary")} onQuestionResolved={(r) => handleQuestionResolved("vocabulary", r)} />
+                          )}
+                          {id === "fact-opinion" && (
+                            <FactOpinion data={data.factOpinion} onCorrect={() => handleCorrect("fact-opinion")} onQuestionResolved={(r) => handleQuestionResolved("fact-opinion", r)} />
+                          )}
+                          {id === "summaries" && (
+                            <Summaries data={data.summaries} mainStory={data.story ?? ""} storyKey={storyKey} userId={user?.id ?? null} onCorrect={() => handleCorrect("summaries")} onQuestionResolved={(r) => handleQuestionResolved("summaries", r)} vocabularyWords={toVocabWithDefs(data.vocabulary?.words ?? [])} />
+                          )}
+                          {id === "character-traits" && (
+                            <CharacterTraits data={data.characterTraits} mainStory={data.story ?? ""} storyKey={storyKey} userId={user?.id ?? null} onCorrect={() => handleCorrect("character-traits")} onQuestionResolved={(r) => handleQuestionResolved("character-traits", r)} vocabularyWords={toVocabWithDefs(data.vocabulary?.words ?? [])} />
+                          )}
+                          {id === "compare-contrast" && (
+                            <CompareContrast data={data.compareContrast} mainStory={data.story ?? ""} onCorrect={() => handleCorrect("compare-contrast")} onQuestionResolved={(r) => handleQuestionResolved("compare-contrast", r)} />
+                          )}
 
-                    <TabsContent value="fact-opinion">
-                      <FactOpinion
-                        data={data.factOpinion}
-                        onCorrect={() => handleCorrect("fact-opinion")}
-                        onQuestionResolved={(r) => handleQuestionResolved("fact-opinion", r)}
-                      />
-                      {!completedActivities["fact-opinion"] && (
-                        <button
-                          type="button"
-                          disabled={submittingActivity === "fact-opinion"}
-                          onClick={() => void handleCompleteActivity("fact-opinion")}
-                          className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading mt-4 w-full disabled:opacity-50 disabled:pointer-events-none"
-                        >
-                          {submittingActivity === "fact-opinion" ? "Saving…" : "Submit Fact vs Opinion ✅"}
-                        </button>
-                      )}
-                    </TabsContent>
-
-                    <TabsContent value="summaries">
-                      <Summaries
-                        data={data.summaries}
-                        mainStory={data.story ?? ""}
-                        storyKey={storyKey}
-                        userId={user?.id ?? null}
-                        onCorrect={() => handleCorrect("summaries")}
-                        onQuestionResolved={(r) => handleQuestionResolved("summaries", r)}
-                      />
-                      {!completedActivities["summaries"] && (
-                        <button
-                          type="button"
-                          disabled={submittingActivity === "summaries"}
-                          onClick={() => void handleCompleteActivity("summaries")}
-                          className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading mt-4 w-full disabled:opacity-50 disabled:pointer-events-none"
-                        >
-                          {submittingActivity === "summaries" ? "Saving…" : "Submit Summary ✅"}
-                        </button>
-                      )}
-                    </TabsContent>
-
-                    <TabsContent value="character-traits">
-                      <CharacterTraits
-                        data={data.characterTraits}
-                        mainStory={data.story ?? ""}
-                        storyKey={storyKey}
-                        userId={user?.id ?? null}
-                        onCorrect={() => handleCorrect("character-traits")}
-                        onQuestionResolved={(r) => handleQuestionResolved("character-traits", r)}
-                      />
-                      {!completedActivities["character-traits"] && (
-                        <button
-                          type="button"
-                          disabled={submittingActivity === "character-traits"}
-                          onClick={() => void handleCompleteActivity("character-traits")}
-                          className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading mt-4 w-full disabled:opacity-50 disabled:pointer-events-none"
-                        >
-                          {submittingActivity === "character-traits" ? "Saving…" : "Submit Character Traits ✅"}
-                        </button>
-                      )}
-                    </TabsContent>
-
-                    <TabsContent value="compare-contrast">
-                      <CompareContrast
-                        data={data.compareContrast}
-                        mainStory={data.story ?? ""}
-                        onCorrect={() => handleCorrect("compare-contrast")}
-                        onQuestionResolved={(r) => handleQuestionResolved("compare-contrast", r)}
-                      />
-                      {!completedActivities["compare-contrast"] && (
-                        <button
-                          type="button"
-                          disabled={submittingActivity === "compare-contrast"}
-                          onClick={() => void handleCompleteActivity("compare-contrast")}
-                          className="clay-button bg-garden-success text-primary-foreground px-8 py-3 font-heading mt-4 w-full disabled:opacity-50 disabled:pointer-events-none"
-                        >
-                          {submittingActivity === "compare-contrast"
-                            ? "Saving…"
-                            : "Submit Compare & Contrast ✅"}
-                        </button>
-                      )}
-                    </TabsContent>
+                          {!completedActivities[id] && (
+                            <button
+                              type="button"
+                              disabled={submittingActivity === id}
+                              onClick={() => void handleCompleteActivity(id)}
+                              style={{
+                                marginTop: 16,
+                                width: "100%",
+                                background: submittingActivity === id
+                                  ? "#aaa"
+                                  : "linear-gradient(135deg,#5BBD4E,#27ae60)",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 16,
+                                padding: "14px 20px",
+                                fontSize: 14,
+                                fontWeight: 800,
+                                cursor: submittingActivity === id ? "not-allowed" : "pointer",
+                                fontFamily: "'Nunito','Sniglet',sans-serif",
+                                boxShadow: "0 5px 0 0 rgba(22,163,74,.4)",
+                                transition: "transform .15s, box-shadow .15s",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 8,
+                              }}
+                              onMouseEnter={(e) => {
+                                if (submittingActivity !== id)
+                                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
+                              }}
+                              onMouseLeave={(e) => {
+                                (e.currentTarget as HTMLButtonElement).style.transform = "";
+                              }}
+                            >
+                              {submittingActivity === id ? "Saving… ⏳" : labels[id]}
+                            </button>
+                          )}
+                          {completedActivities[id] && (
+                            <div style={{ marginTop:12, background:"#d5f5e3", borderRadius:14, padding:"12px 16px", textAlign:"center", fontSize:13, fontWeight:800, color:"#1a6a3a" }}>
+                              🎉 Activity complete!
+                            </div>
+                          )}
+                        </TabsContent>
+                      );
+                    })}
                   </Tabs>
                 ) : null}
 
@@ -779,15 +819,31 @@ export default function Activity() {
                   <button
                     type="button"
                     onClick={handleNextStory}
-                    disabled={Boolean(
-                      data && !ACTIVITY_TABS.every((t) => completedActivities[t.id]),
-                    )}
-                    title={
-                      data && !ACTIVITY_TABS.every((t) => completedActivities[t.id])
-                        ? "Submit every activity for this story first."
-                        : undefined
-                    }
-                    className="clay-button bg-card text-foreground border border-border px-8 py-3 font-heading disabled:opacity-50 disabled:pointer-events-none"
+                    disabled={Boolean(data && !ACTIVITY_TABS.every((t) => completedActivities[t.id]))}
+                    title={data && !ACTIVITY_TABS.every((t) => completedActivities[t.id]) ? "Submit every activity for this story first." : undefined}
+                    style={{
+                      background: ACTIVITY_TABS.every((t) => completedActivities[t.id])
+                        ? "linear-gradient(135deg,#5bb8f5,#3498DB)"
+                        : "rgba(255,255,255,.7)",
+                      color: ACTIVITY_TABS.every((t) => completedActivities[t.id]) ? "#fff" : "#888",
+                      border: "2px solid rgba(255,255,255,.6)",
+                      borderRadius: 16,
+                      padding: "13px 32px",
+                      fontSize: 14,
+                      fontWeight: 800,
+                      cursor: ACTIVITY_TABS.every((t) => completedActivities[t.id]) ? "pointer" : "not-allowed",
+                      fontFamily: "'Nunito','Sniglet',sans-serif",
+                      boxShadow: ACTIVITY_TABS.every((t) => completedActivities[t.id]) ? "0 5px 0 0 rgba(52,152,219,.4)" : "none",
+                      opacity: ACTIVITY_TABS.every((t) => completedActivities[t.id]) ? 1 : 0.6,
+                      transition: "transform .15s",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (ACTIVITY_TABS.every((t) => completedActivities[t.id]))
+                        (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.transform = "";
+                    }}
                   >
                     Next Story 📖
                   </button>

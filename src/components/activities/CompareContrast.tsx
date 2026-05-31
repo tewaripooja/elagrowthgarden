@@ -10,6 +10,7 @@ import {
   remainingAttemptsHint,
 } from "@/lib/activityAttempts";
 import { explainCompareContrastReveal } from "@/lib/explainCorrect";
+import { playWrongSound } from "@/lib/sounds";
 
 interface Props {
   data: CompareContrastData;
@@ -62,6 +63,7 @@ export default function CompareContrast({ data, mainStory, onCorrect, onQuestion
     }
 
     const fails = wrongSubmits + 1;
+    playWrongSound();
     setWrongSubmits(fails);
 
     if (fails >= MAX_ACTIVITY_ATTEMPTS) {

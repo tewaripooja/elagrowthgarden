@@ -14,11 +14,12 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["Fredoka", "Sniglet", "sans-serif"],
-        body: ["Sniglet", "Lexend", "sans-serif"],
+        heading: ["Nunito", "sans-serif"],
+        body: ["Nunito", "sans-serif"],
+        display: ["Sniglet", "sans-serif"],
       },
       fontSize: {
-        base: ["18px", { lineHeight: "1.6" }],
+        base: ["17px", { lineHeight: "1.7" }],
       },
       colors: {
         border: "hsl(var(--border))",

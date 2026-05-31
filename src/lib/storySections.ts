@@ -146,9 +146,9 @@ function normalizeForCompare(s: string): string {
 }
 
 export function vocabularyWordsInText(
-  words: { word: string }[],
+  words: { word: string; definition?: string }[],
   sectionText: string,
-): { word: string }[] {
+): { word: string; definition?: string }[] {
   const lower = sectionText.toLowerCase();
   return (words ?? []).filter((w) => {
     const pat = new RegExp(`\\b${escapeRegExp(w.word)}\\b`, "i");

@@ -13,6 +13,7 @@ import {
   remainingAttemptsHint,
 } from "@/lib/activityAttempts";
 import { explainTraitCorrect } from "@/lib/explainCorrect";
+import { playWrongSound } from "@/lib/sounds";
 import type { McqSlice } from "@/lib/questionVariants";
 import {
   characterTraitConceptVariants,
@@ -28,6 +29,7 @@ interface Props {
   evidenceQuestionCount?: number;
   onCorrect: () => void;
   onQuestionResolved?: (resolution: QuestionResolution) => void;
+  vocabularyWords?: { word: string; definition?: string }[];
 }
 
 type RowStatus = "playing" | "correct" | "revealed";
@@ -60,6 +62,7 @@ export default function CharacterTraits({
   evidenceQuestionCount = 2,
   onCorrect,
   onQuestionResolved,
+  vocabularyWords = [],
 }: Props) {
   const n = data.questions.length;
 
@@ -199,6 +202,7 @@ export default function CharacterTraits({
     }
 
     const fails = wrongCounts[qIndex] + 1;
+    playWrongSound();
     setWrongCounts((prev) => {
       const nc = [...prev];
       nc[qIndex] = fails;
@@ -278,6 +282,7 @@ export default function CharacterTraits({
     }
 
     const fails = wrongCounts[qIndex] + 1;
+    playWrongSound();
     setWrongCounts((prev) => {
       const nc = [...prev];
       nc[qIndex] = fails;
@@ -397,6 +402,7 @@ export default function CharacterTraits({
                 setEvidenceIdx(next);
               }}
               disabled={freezeEvidenceRow}
+              vocabularyWords={vocabularyWords}
             />
 
             <div className="grid grid-cols-1 gap-2">
