@@ -7,22 +7,28 @@ export default function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // With implicit flow, supabase-js automatically picks up the
-    // access_token from the URL hash when detectSessionInUrl = true.
-    // We just need to wait briefly for the session to be set, then redirect.
-    const finish = async () => {
-      // Give the client a moment to parse the hash and store the session
-      await new Promise((r) => setTimeout(r, 500));
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+    // Listen for auth state changes — supabase-js processes the URL hash automatically
+    // when detectSessionInUrl = true. We react to the resulting event.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        // Forgot-password link: go to the reset form (session is active so user can call updateUser)
+        navigate("/reset-password", { replace: true });
+      } else if (session) {
+        // Normal login / signup confirmation
         navigate("/", { replace: true });
-      } else {
-        navigate("/login", { replace: true });
       }
-    };
+    });
 
-    void finish();
+    // Fallback: if no event fires within 3 s, check session and navigate
+    const timer = setTimeout(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      navigate(session ? "/" : "/login", { replace: true });
+    }, 3000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
   }, [navigate]);
 
   return (
