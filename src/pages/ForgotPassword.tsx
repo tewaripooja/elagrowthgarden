@@ -102,7 +102,7 @@ export default function ForgotPassword() {
               </form>
             )}
             <div style={{ marginTop:16, textAlign:"center" }}>
-              <Link to="/" style={{ fontSize:12, color:"#aaa", fontFamily:font, textDecoration:"none" }}>← Back to home</Link>
+              <Link to="/login" style={{ fontSize:12, color:"#aaa", fontFamily:font, textDecoration:"none" }}>← Back to sign in</Link>
             </div>
           </div>
         </div>

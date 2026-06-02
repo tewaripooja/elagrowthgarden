@@ -63,6 +63,11 @@ export default function ResetPassword() {
             >
               Request new link
             </button>
+            <div style={{ marginTop:14 }}>
+              <button type="button" onClick={() => navigate("/login")} style={{ background:"none", border:"none", color:"#aaa", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:font }}>
+                ← Back to sign in
+              </button>
+            </div>
           </div>
         </div>
       </DynamicSky>
@@ -174,6 +179,11 @@ export default function ResetPassword() {
                 {submitting ? "Saving…" : "Save new password 🔑"}
               </button>
             </form>
+            <div style={{ marginTop:16, textAlign:"center" }}>
+              <button type="button" onClick={() => navigate("/login")} style={{ background:"none", border:"none", color:"#aaa", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:font }}>
+                ← Back to sign in
+              </button>
+            </div>
           </div>
         </div>
       </div>

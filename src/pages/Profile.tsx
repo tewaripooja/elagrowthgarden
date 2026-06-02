@@ -103,45 +103,43 @@ export default function Profile() {
     <DynamicSky>
       <div style={{
         minHeight: "100vh", display: "flex", flexDirection: "column",
-        alignItems: "center", padding: "0 0 40px",
+        alignItems: "center", padding: "16px 16px 40px",
       }}>
-
-        {/* Top bar */}
-        <div style={{
-          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "14px 20px", zIndex: 20,
-        }}>
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            style={{
-              background: "rgba(255,255,255,.25)", border: "1.5px solid rgba(255,255,255,.6)",
-              borderRadius: 12, color: "#fff", fontWeight: 700, fontSize: 13,
-              padding: "7px 16px", cursor: "pointer", fontFamily: font,
-              display: "flex", alignItems: "center", gap: 6,
-            }}
-          >
-            ← Home
-          </button>
-          <div style={{ fontSize: 15, fontWeight: 900, color: "#fff", fontFamily: font, textShadow: "0 1px 6px rgba(0,0,0,.25)" }}>
-            My Profile
-          </div>
-          <div style={{ width: 80 }} /> {/* spacer */}
-        </div>
 
         {/* Card */}
         <div style={{
           width: "100%", maxWidth: 480,
           background: "#fff", borderRadius: 24,
           boxShadow: "0 12px 40px rgba(0,0,0,.16)",
-          overflow: "hidden", margin: "0 16px",
+          overflow: "hidden",
         }}>
 
           {/* Profile header */}
           <div style={{
             background: "linear-gradient(135deg,#5BBD4E,#27ae60)",
-            padding: "32px 28px 24px", textAlign: "center",
+            padding: "16px 20px 24px",
           }}>
+            {/* Back button row */}
+            <div style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                style={{
+                  background: "rgba(255,255,255,.25)", border: "1.5px solid rgba(255,255,255,.6)",
+                  borderRadius: 10, color: "#fff", fontWeight: 700, fontSize: 13,
+                  padding: "6px 14px", cursor: "pointer", fontFamily: font,
+                  display: "flex", alignItems: "center", gap: 5,
+                }}
+              >
+                ← Home
+              </button>
+              <div style={{ flex: 1, textAlign: "center", fontSize: 15, fontWeight: 900, color: "#fff", fontFamily: font, textShadow: "0 1px 6px rgba(0,0,0,.2)" }}>
+                My Profile
+              </div>
+              <div style={{ width: 70 }} />
+            </div>
+            {/* Avatar + name centred */}
+            <div style={{ textAlign: "center" }}>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
               <Avatar url={avatarUrl} name={displayName} />
             </div>
@@ -156,6 +154,7 @@ export default function Profile() {
                 Member since {joinedDate}
               </div>
             )}
+            </div> {/* end textAlign:center */}
           </div>
 
           {/* Body */}

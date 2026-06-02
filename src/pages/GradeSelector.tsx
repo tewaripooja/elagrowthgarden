@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import DynamicSky from "@/components/DynamicSky";
-import { GRADE_META, setGradeLevel, type GradeLevel } from "@/lib/gradeLevel";
+import { GRADE_META, getGradeLevel, setGradeLevel, type GradeLevel } from "@/lib/gradeLevel";
 
 type Props = { onSelect?: (grade: GradeLevel) => void };
 
@@ -24,6 +24,7 @@ function PipSmall() {
 
 export default function GradeSelector({ onSelect }: Props) {
   const navigate = useNavigate();
+  const hasExistingGrade = getGradeLevel() !== null;
 
   const handleSelect = (grade: GradeLevel) => {
     if (onSelect) {
@@ -37,6 +38,18 @@ export default function GradeSelector({ onSelect }: Props) {
   return (
     <DynamicSky>
       <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"24px 16px" }}>
+        {/* Back button — only shown when user already has a grade (e.g. changing from Profile) */}
+        {hasExistingGrade && (
+          <div style={{ width:"100%", maxWidth:460, marginBottom:10, display:"flex" }}>
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              style={{ background:"rgba(255,255,255,.25)", border:"1.5px solid rgba(255,255,255,.6)", borderRadius:10, color:"#fff", fontWeight:700, fontSize:13, padding:"6px 16px", cursor:"pointer", fontFamily:font, display:"flex", alignItems:"center", gap:5 }}
+            >
+              ← Back
+            </button>
+          </div>
+        )}
         <div style={{ width:"100%", maxWidth:460, background:"#fff", borderRadius:24, boxShadow:"0 12px 40px rgba(0,0,0,.16)", overflow:"hidden" }}>
 
           {/* Header */}

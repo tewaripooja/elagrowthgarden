@@ -181,7 +181,7 @@ export default function Signup() {
               <Link to="/login" style={{ color:"#27ae60", fontWeight:800, textDecoration:"none" }}>Sign in</Link>
             </div>
             <div style={{ marginTop:8, textAlign:"center" }}>
-              <Link to="/" style={{ fontSize:12, color:"#aaa", fontFamily:font, textDecoration:"none" }}>← Back to home</Link>
+              <Link to="/login" style={{ fontSize:12, color:"#aaa", fontFamily:font, textDecoration:"none" }}>← Back to sign in</Link>
             </div>
           </div>
         </div>
