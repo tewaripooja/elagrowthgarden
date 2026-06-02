@@ -68,6 +68,7 @@ type Props = {
   vocabularyWords: { word: string; definition?: string }[];
   readingExtras?: StoryReadingExtras;
   userId: string | null;
+  readingWpm?: number;
   onComplete: (metrics: ReadingMetrics) => void;
 };
 
@@ -79,6 +80,7 @@ export default function StoryReadingFlow({
   vocabularyWords,
   readingExtras,
   userId,
+  readingWpm,
   onComplete,
 }: Props) {
   const storyText = story ?? "";
@@ -227,7 +229,7 @@ export default function StoryReadingFlow({
       for (let i = 0; i < resumeAt; i++) {
         const row = data?.find((r) => r.section_index === i);
         readingAggRef.current.seconds  += row?.seconds_spent ?? 0;
-        readingAggRef.current.minimum  += minimumReadingSeconds(countWords(sections[i] ?? ""));
+        readingAggRef.current.minimum  += minimumReadingSeconds(countWords(sections[i] ?? ""), readingWpm);
       }
       if (!allDone) setCurrentIndex(resumeAt);
       if (allDone) {
@@ -235,7 +237,7 @@ export default function StoryReadingFlow({
         for (let i = 0; i < sectionCount; i++) {
           const row = data?.find((r) => r.section_index === i);
           seconds += row?.seconds_spent ?? 0;
-          minimum += minimumReadingSeconds(countWords(sections[i] ?? ""));
+          minimum += minimumReadingSeconds(countWords(sections[i] ?? ""), readingWpm);
         }
         if (!cancelled) {
           setHydrated(true);
@@ -261,7 +263,7 @@ export default function StoryReadingFlow({
   );
 
   const sectionText = sections[currentIndex] ?? "";
-  const minReadingSeconds = useMemo(() => minimumReadingSeconds(countWords(sectionText)), [sectionText]);
+  const minReadingSeconds = useMemo(() => minimumReadingSeconds(countWords(sectionText), readingWpm), [sectionText, readingWpm]);
   const elapsedSeconds = Math.max(0, Math.floor((Date.now() - sectionEnteredAtRef.current) / 1000));
   const readingTimeMet = elapsedSeconds >= minReadingSeconds;
   const secondsUntilReadingOk = Math.max(0, minReadingSeconds - elapsedSeconds);
@@ -318,7 +320,7 @@ export default function StoryReadingFlow({
     }
     const totalSeconds = Math.max(1, Math.round((Date.now() - sectionEnteredAtRef.current) / 1000));
     const secText = sections[currentIndex] ?? "";
-    const minSuggested = minimumReadingSeconds(countWords(secText));
+    const minSuggested = minimumReadingSeconds(countWords(secText), readingWpm);
     readingAggRef.current.seconds += totalSeconds;
     readingAggRef.current.minimum += minSuggested;
 
@@ -351,6 +353,11 @@ export default function StoryReadingFlow({
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
           <div>
             <div style={{ fontSize:16, fontWeight:900, color:"#fff", fontFamily:"'Nunito',sans-serif" }}>{title}</div>
+            {readingExtras?.sectionTitles?.[currentIndex] && (
+              <div style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,.85)", marginTop:2 }}>
+                {readingExtras.sectionTitles[currentIndex]}
+              </div>
+            )}
             <div style={{ display:"inline-block", marginTop:4, background:"rgba(255,255,255,.3)", borderRadius:20, padding:"3px 11px", fontSize:11, fontWeight:800, color:"#fff" }}>
               {genre}
             </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trophy } from "lucide-react";
+import { getGradeLevel, GRADE_META } from "@/lib/gradeLevel";
 import DynamicSky from "@/components/DynamicSky";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGameState } from "@/hooks/useGameState";
@@ -74,7 +75,7 @@ function PipMascot({ onClick }: { onClick: () => void }) {
 
 export default function Index() {
   const navigate = useNavigate();
-  const { user, loading, signOut } = useAuth();
+  const { user } = useAuth();
   const gameState = useGameState();
   const [pipMsg, setPipMsg] = useState(0);
   const [pipKey, setPipKey] = useState(0);
@@ -112,26 +113,40 @@ export default function Index() {
             <div style={{ background:"rgba(255,255,255,.88)", borderRadius:20, padding:"5px 13px", fontSize:13, fontWeight:800, color:"#3a5a2a", display:"flex", alignItems:"center", gap:5 }}>
               ⭐ {gameState.stars}
             </div>
-            {/* Auth */}
-            {!loading && (
-              user ? (
-                <button
-                  type="button"
-                  onClick={() => void signOut()}
-                  style={{ background:"rgba(255,255,255,.25)", border:"1.5px solid rgba(255,255,255,.6)", borderRadius:12, color:"#fff", fontWeight:700, fontSize:12, padding:"6px 14px", cursor:"pointer", fontFamily:"'Nunito',sans-serif" }}
-                >
-                  Sign out
-                </button>
+            {/* Grade pill */}
+            {(() => {
+              const grade = getGradeLevel();
+              if (!grade) return null;
+              const meta = GRADE_META[grade];
+              return (
+                <div style={{ background:"rgba(255,255,255,.88)", borderRadius:20, padding:"5px 13px", fontSize:13, fontWeight:800, color:"#3a5a2a", display:"flex", alignItems:"center", gap:4 }}>
+                  {meta.emoji} {meta.label}
+                </div>
+              );
+            })()}
+            {/* Profile avatar button */}
+            <button
+              type="button"
+              onClick={() => navigate("/profile")}
+              title="My Profile"
+              style={{
+                width: 36, height: 36, borderRadius: "50%",
+                background: "linear-gradient(135deg,#5BBD4E,#27ae60)",
+                border: "2px solid rgba(255,255,255,.85)",
+                cursor: "pointer", overflow: "hidden",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 2px 8px rgba(0,0,0,.18)",
+                padding: 0, flexShrink: 0,
+              }}
+            >
+              {user?.user_metadata?.avatar_url ? (
+                <img src={user.user_metadata.avatar_url as string} alt="profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
-                <button
-                  type="button"
-                  onClick={() => navigate("/login")}
-                  style={{ background:"rgba(255,255,255,.25)", border:"1.5px solid rgba(255,255,255,.6)", borderRadius:12, color:"#fff", fontWeight:700, fontSize:12, padding:"6px 14px", cursor:"pointer", fontFamily:"'Nunito',sans-serif" }}
-                >
-                  Log in
-                </button>
-              )
-            )}
+                <span style={{ fontSize: 16, color: "#fff", fontWeight: 900, fontFamily:"'Nunito',sans-serif", lineHeight: 1 }}>
+                  {((user?.user_metadata?.full_name || user?.email || "?") as string)[0].toUpperCase()}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 

@@ -51,6 +51,8 @@ export type ActivityData = VocabularyData | CompareContrastData | FactOpinionDat
 export interface StoryReadingExtras {
   /** Important phrases to spotlight (opening sentence is auto-added when suitable). */
   keyPhrases?: string[];
+  /** Chapter/section titles for Tier 3 multi-chapter stories. Index matches splitStoryIntoSections output. */
+  sectionTitles?: string[];
 }
 
 export interface CombinedStoryData {

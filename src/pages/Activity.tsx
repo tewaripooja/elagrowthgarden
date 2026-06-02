@@ -17,6 +17,7 @@ import { useGameState } from "@/hooks/useGameState";
 import { generateCombinedStory, type CombinedStoryData, type ActivityType } from "@/lib/ai";
 import { STORY_GENRES } from "@/lib/storyGenres";
 import { pickSampleStory } from "@/lib/pickSampleStory";
+import { getGradeLevel, getGradeTier, getReadingWPM } from "@/lib/gradeLevel";
 import Vocabulary from "@/components/activities/Vocabulary";
 import CompareContrast from "@/components/activities/CompareContrast";
 import FactOpinion from "@/components/activities/FactOpinion";
@@ -134,6 +135,9 @@ export default function Activity() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+
+  const storyTier = getGradeTier(getGradeLevel() ?? 3);
+  const storyWpm  = getReadingWPM(storyTier);
   const gameState = useGameState();
 
   const locationState = (location.state ?? null) as ActivityLocationState | null;
@@ -208,7 +212,7 @@ export default function Activity() {
       1,
       Math.round((Date.now() - fullStoryReadingStartedAtRef.current) / 1000),
     );
-    const minimumSeconds = Math.max(1, minimumReadingSeconds(countWords(data.story ?? "")));
+    const minimumSeconds = Math.max(1, minimumReadingSeconds(countWords(data.story ?? ""), storyWpm));
     handleReadingFlowComplete({
       totalSecondsSpent: elapsedSeconds,
       totalMinimumSeconds: minimumSeconds,
@@ -264,6 +268,10 @@ export default function Activity() {
     if (user?.id || data !== null || guestRestoreRanRef.current) return;
     const saved = getGuestActiveStory();
     if (!saved) return;
+    if (saved.tier !== undefined && saved.tier !== storyTier) {
+      clearGuestActiveStory();
+      return;
+    }
 
     guestRestoreRanRef.current = true;
     lastStoryTitleRef.current = saved.story.title;
@@ -271,7 +279,7 @@ export default function Activity() {
     setData(saved.story);
     setCompletedActivities(saved.completedActivities);
     setReadingFlowComplete(saved.readingFlowComplete);
-  }, [user?.id, data]);
+  }, [user?.id, data, storyTier]);
 
   /** Persist guest story progress locally. */
   useEffect(() => {
@@ -282,8 +290,9 @@ export default function Activity() {
       completedActivities,
       readingFlowComplete,
       fromReadingHome,
+      tier: storyTier,
     });
-  }, [user?.id, data, round, completedActivities, readingFlowComplete, fromReadingHome]);
+  }, [user?.id, data, round, completedActivities, readingFlowComplete, fromReadingHome, storyTier]);
 
   /** Which activity tabs appear in the bar: Reading = all; other home tiles = chosen only until done, then incomplete only. */
   const visibleActivityIds = useMemo(() => {
@@ -318,7 +327,7 @@ export default function Activity() {
       seenBundledTitlesRef.current[genreLabel] = seenForGenre;
 
       let loadedFromBundled = false;
-      let result = pickSampleStory(genreLabel, lastStoryTitleRef.current, seenForGenre);
+      let result = pickSampleStory(genreLabel, lastStoryTitleRef.current, seenForGenre, storyTier);
       if (result) {
         seenForGenre.add(result.title);
         loadedFromBundled = true;
@@ -354,6 +363,7 @@ export default function Activity() {
           completedActivities: {},
           readingFlowComplete: false,
           fromReadingHome,
+          tier: storyTier,
         });
       }
 
@@ -691,6 +701,7 @@ export default function Activity() {
                   vocabularyWords={data.vocabulary?.words ?? []}
                   readingExtras={data.readingExtras}
                   userId={user?.id ?? null}
+                  readingWpm={storyWpm}
                   onComplete={(m) => handleReadingFlowComplete(m)}
                 />
               </div>

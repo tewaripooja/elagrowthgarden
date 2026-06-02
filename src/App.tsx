@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import HomeEntry from "./pages/HomeEntry";
 import Activity from "./pages/Activity";
 import Progress from "./pages/Progress";
+import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import AuthCallback from "./pages/AuthCallback";
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/" element={<HomeEntry />} />
             <Route path="/activity" element={<Activity />} />
             <Route path="/progress" element={<Progress />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </RouteErrorBoundary>

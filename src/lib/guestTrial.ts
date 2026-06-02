@@ -1,4 +1,5 @@
 import type { CombinedStoryData } from "@/lib/ai";
+import type { StoryTier } from "@/lib/gradeLevel";
 
 const STORAGE_KEY = "ela-guest-active-story-v1";
 
@@ -8,6 +9,7 @@ export interface GuestActiveStory {
   completedActivities: Record<string, boolean>;
   readingFlowComplete: boolean;
   fromReadingHome: boolean;
+  tier?: StoryTier;
 }
 
 function load(): GuestActiveStory | null {
