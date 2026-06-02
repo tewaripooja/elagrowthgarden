@@ -1,22 +1,52 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import DynamicSky from "@/components/DynamicSky";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 
 const font = "'Nunito',sans-serif";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
-  const { session } = useAuth();
   const [password, setPassword]   = useState("");
   const [confirm, setConfirm]     = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone]           = useState(false);
+  // Wait up to 3 s for the recovery session to arrive before showing error
+  const [sessionReady, setSessionReady] = useState(false);
+  const [hasSession, setHasSession]     = useState(false);
 
-  // Guard: must have a recovery session to reach this page
-  if (!session) {
+  useEffect(() => {
+    // Check if a session already exists (e.g. navigated here from AuthCallback)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) { setHasSession(true); setSessionReady(true); }
+    });
+
+    // Also listen for the PASSWORD_RECOVERY event arriving slightly later
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || session) {
+        setHasSession(true);
+        setSessionReady(true);
+      }
+    });
+
+    // Timeout fallback — if no session after 3 s, show the expired error
+    const timer = setTimeout(() => setSessionReady(true), 3000);
+
+    return () => { subscription.unsubscribe(); clearTimeout(timer); };
+  }, []);
+
+  if (!sessionReady) {
+    return (
+      <DynamicSky>
+        <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <div style={{ fontSize:15, fontWeight:700, color:"#fff", fontFamily:font }}>Loading…</div>
+        </div>
+      </DynamicSky>
+    );
+  }
+
+  if (!hasSession) {
     return (
       <DynamicSky>
         <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}>
