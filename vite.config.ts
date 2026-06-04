@@ -6,19 +6,60 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    // true = bind 0.0.0.0 so phones / other PCs can open http://<your-LAN-IP>:8080
     host: true,
     port: 8080,
-    // Leave overlay enabled so runtime errors are visible (blank screen otherwise).
-    hmr: {
-      overlay: true,
-    },
+    hmr: { overlay: true },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
+    alias: { "@": path.resolve(__dirname, "./src") },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
+  },
+  build: {
+    // Silence the warning — chunks are split below so nothing stays above 600 kB
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React core — tiny, loaded first
+          "vendor-react": ["react", "react-dom", "react/jsx-runtime"],
+          // Routing
+          "vendor-router": ["react-router-dom"],
+          // Data fetching
+          "vendor-query": ["@tanstack/react-query"],
+          // Supabase client
+          "vendor-supabase": ["@supabase/supabase-js"],
+          // UI component library (radix + shadcn)
+          "vendor-ui": [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-tabs",
+            "@radix-ui/react-slot",
+            "@radix-ui/react-label",
+            "@radix-ui/react-select",
+            "@radix-ui/react-toast",
+            "@radix-ui/react-tooltip",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-accordion",
+            "@radix-ui/react-checkbox",
+            "@radix-ui/react-switch",
+          ],
+          // Game components (boss battle, characters, arena)
+          "game": [
+            "./src/components/game/BossEncounter",
+            "./src/components/game/BattleArena",
+            "./src/components/game/FrostbiteCharacter",
+            "./src/components/game/PipBattleCharacter",
+          ],
+          // Activity components — loaded only on the Activity page
+          "activities": [
+            "./src/components/activities/Vocabulary",
+            "./src/components/activities/FactOpinion",
+            "./src/components/activities/Summaries",
+            "./src/components/activities/CharacterTraits",
+            "./src/components/activities/CompareContrast",
+          ],
+        },
+      },
+    },
   },
 }));
