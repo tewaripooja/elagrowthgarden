@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useGameState } from "@/hooks/useGameState";
+import { BossEncounter } from "@/components/game/BossEncounter";
+import type { Grade } from "@/types/game";
 import { generateCombinedStory, type CombinedStoryData, type ActivityType } from "@/lib/ai";
 import { STORY_GENRES } from "@/lib/storyGenres";
 import { pickSampleStory } from "@/lib/pickSampleStory";
@@ -136,9 +138,25 @@ export default function Activity() {
   const location = useLocation();
   const { user } = useAuth();
 
+  const {
+    gameState: gs,
+    xpProgress,
+    overnightMessage,
+    recordAnswer,
+    recordActivityComplete,
+    shouldTriggerBoss,
+    recordBossWin,
+  } = useGameState();
+  const [showBoss, setShowBoss] = useState(false);
+
   const storyTier = getGradeTier(getGradeLevel() ?? 3);
   const storyWpm  = getReadingWPM(storyTier);
-  const gameState = useGameState();
+
+  // Overnight frost toast
+  useEffect(() => {
+    if (overnightMessage) toast("Frostbite visited! ❄️", { description: overnightMessage });
+  }, [overnightMessage]);
+
 
   const locationState = (location.state ?? null) as ActivityLocationState | null;
   /** Home "Reading" tile — show every activity tab. Any other tile — one activity first, then remaining only. */
@@ -177,6 +195,7 @@ export default function Activity() {
   const fullStoryReadingStartedAtRef = useRef<number>(Date.now());
   const resolutionsRef = useRef<Record<string, QuestionResolution>>({});
   const guestRestoreRanRef = useRef(false);
+  const activitiesSectionRef = useRef<HTMLDivElement | null>(null);
 
   const storyKey = useMemo(
     () => (data ? `${data.title}::${data.genre}::r${round}` : ""),
@@ -191,9 +210,14 @@ export default function Activity() {
     (metrics: ReadingMetrics) => {
       setReadingMetrics(metrics);
       setReadingFlowComplete(true);
+      setActiveTab("vocabulary");
       if (user?.id) {
         void setDailyStoryReadingDone(user.id, true);
       }
+      // Scroll to activities after a brief render delay
+      setTimeout(() => {
+        activitiesSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 150);
     },
     [user?.id],
   );
@@ -306,7 +330,7 @@ export default function Activity() {
     return ACTIVITY_TABS.map((t) => t.id).filter((id) => !completedActivities[id]);
   }, [data, fromReadingHome, entryActivityTab, completedActivities]);
 
-  const progressPercent = (gameState.stageIndex / STAGES_COUNT) * 100;
+  const progressPercent = xpProgress;
   const storyPickerHeadingByActivity: Partial<Record<ActivityType, string>> = {
     vocabulary: "Pick a Story type to increase your Vocabulary",
     "fact-opinion": "Pick a Story type to improve your Fact vs Opinion skills",
@@ -332,7 +356,7 @@ export default function Activity() {
         seenForGenre.add(result.title);
         loadedFromBundled = true;
       } else {
-        result = await generateCombinedStory(gameState.level, genreLabel);
+        result = await generateCombinedStory(gs?.level ?? 2, genreLabel);
         toast.message("Loaded an AI fallback story", {
           description: "Bundled stories for this genre were exhausted in this session.",
         });
@@ -400,9 +424,9 @@ export default function Activity() {
 
   const handleCorrect = useCallback((activityType: ActivityType) => {
     playCorrectSound();
-    gameState.handleCorrectAnswer();
+    recordAnswer(activityType, true);
     setCorrectCounts((prev) => ({ ...prev, [activityType]: (prev[activityType] || 0) + 1 }));
-  }, [gameState]);
+  }, [recordAnswer]);
 
   const handleQuestionResolved = useCallback((activityType: ActivityType, res: QuestionResolution) => {
     resolutionsRef.current[resolutionStorageKey(activityType, res.questionKey)] = res;
@@ -447,11 +471,12 @@ export default function Activity() {
       const earnsStar = perfect && avgFinal >= STAR_SCORE_THRESHOLD && !starBlockedForReadingVocab;
       if (earnsStar) {
         playStarSound();
-        gameState.awardPerfectActivity();
         setRecentStar(true);
         setTimeout(() => setRecentStar(false), 2000);
       }
-      gameState.completeStory(activityType, totalQ, correct, `${data.title}::${round}`);
+      recordActivityComplete(activityType);
+      // Trigger boss immediately — don't wait for useEffect (avoids loading race)
+      setTimeout(() => setShowBoss(true), 600);
 
       if (user?.id) {
         void appendDailyStoryCompletedActivity(user.id, activityType);
@@ -464,7 +489,7 @@ export default function Activity() {
     completedActivities,
     data,
     correctCounts,
-    gameState,
+    recordActivityComplete,
     fromReadingHome,
     round,
     readingMetrics,
@@ -571,7 +596,7 @@ export default function Activity() {
               >
                 <Star className="h-6 w-6 text-amber-100 fill-current drop-shadow-md" />
                 <span className="absolute -bottom-1 -right-1 bg-violet-950 text-amber-100 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                  {gameState.stars}
+                  {gs?.xp ?? 0}
                 </span>
               </div>
             </div>
@@ -601,7 +626,7 @@ export default function Activity() {
                   />
                 </div>
                 <p className="text-white/90 mt-1.5" style={{ fontSize:10, fontWeight:700, textAlign:"right" }}>
-                  🌱 {gameState.currentStage} · 🌸 {gameState.flowers} flowers
+                  🌱 {gs?.title ?? 'Seed Keeper'} · ⭐ {gs?.xp ?? 0} XP
                 </p>
               </>
             )}
@@ -730,6 +755,7 @@ export default function Activity() {
                 </div>
 
                 {/* Activity Tabs */}
+                <div ref={activitiesSectionRef} />
                 {visibleActivityIds.length > 0 ? (
                   <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ActivityType)}>
                     <TabsList
@@ -775,7 +801,7 @@ export default function Activity() {
                             <CharacterTraits data={data.characterTraits} mainStory={data.story ?? ""} storyKey={storyKey} userId={user?.id ?? null} onCorrect={() => handleCorrect("character-traits")} onQuestionResolved={(r) => handleQuestionResolved("character-traits", r)} vocabularyWords={toVocabWithDefs(data.vocabulary?.words ?? [])} />
                           )}
                           {id === "compare-contrast" && (
-                            <CompareContrast data={data.compareContrast} mainStory={data.story ?? ""} onCorrect={() => handleCorrect("compare-contrast")} onQuestionResolved={(r) => handleQuestionResolved("compare-contrast", r)} />
+                            <CompareContrast data={data.compareContrast} mainStory={data.story ?? ""} grade={getGradeLevel() ?? 1} onCorrect={() => handleCorrect("compare-contrast")} onQuestionResolved={(r) => handleQuestionResolved("compare-contrast", r)} />
                           )}
 
                           {!completedActivities[id] && (
@@ -863,6 +889,20 @@ export default function Activity() {
             )}
         </div>
       </div>
+
+      {/* ── Boss Encounter overlay ── */}
+      {showBoss && gs && (
+        <div style={{ position:"fixed", inset:0, zIndex:1000 }}>
+          <BossEncounter
+            grade={(gs.grade ?? 1) as Grade}
+            pipStage={(Math.min(gs.level ?? 1, 5)) as import('@/types/game').PipStage}
+            storyData={data}
+            onVictory={() => { recordBossWin(); setShowBoss(false); }}
+            onDefeat={() => setShowBoss(false)}
+          />
+        </div>
+      )}
+
     </DynamicSky>
   );
 }

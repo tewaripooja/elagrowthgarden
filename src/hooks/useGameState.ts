@@ -1,200 +1,255 @@
-import { useState, useCallback } from "react";
+// ─────────────────────────────────────────
+// src/hooks/useGameState.ts
+// Central game state hook. Syncs to Supabase
+// (authenticated users) or localStorage (guests).
+// Mirrors your existing reading_progress pattern.
+// ─────────────────────────────────────────
 
-export type PlantStage = "seed" | "sprout" | "leaves" | "bud" | "flower";
-export type ActivityMode = "vocabulary" | "compare-contrast" | "fact-opinion" | "summaries" | "character-traits";
+import { useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import type { GameState, Grade, PowerType } from '@/types/game';
+import {
+  DEFAULT_PLANTS,
+  getLevelFromXP,
+  getXPForActivity,
+  LEVEL_TITLES,
+  POWER_CHARGE_MAX,
+  FROSTBITE_OVERNIGHT_MESSAGES,
+  XP_THRESHOLDS,
+} from '@/data/frostbiteGameData';
 
-const STAGES: PlantStage[] = ["seed", "sprout", "leaves", "bud", "flower"];
-const STORAGE_KEY = "ela-garden-state-reset-20260507-v2";
-const PERFECT_DAYS_TO_LEVEL_UP = 7;
+const STORAGE_KEY = 'ela_game_state';
+const QUERY_KEY = ['game_state'];
 
-const ALL_ACTIVITIES: ActivityMode[] = ["vocabulary", "compare-contrast", "fact-opinion", "summaries", "character-traits"];
-
-export interface StoryRecord {
-  /** Same value for all activity submits from one loaded story (see Activity page). */
-  storyKey: string;
-  activityType: string;
-  date: string;
-  totalQuestions: number;
-  correctAnswers: number;
-  perfect: boolean;
-  level: number;
-}
-
-export interface ActivityProgress {
-  level: number;
-  perfectStreak: number; // consecutive days with 100% accuracy
-  lastPerfectDate: string | null; // ISO date string (YYYY-MM-DD) of last perfect day
-}
-
-export interface GameState {
-  level: number; // kept for backward compat / overall display
-  stars: number;
-  currentStage: PlantStage;
-  stageIndex: number;
-  flowers: number;
-  totalCorrect: number;
-  perfectStreak: number;
-  storyHistory: StoryRecord[];
-  activityLevels: Record<string, ActivityProgress>;
-}
-
-/** Check if dateB is exactly 1 day after dateA (both YYYY-MM-DD strings) */
-function isConsecutiveDay(dateA: string, dateB: string): boolean {
-  const a = new Date(dateA + "T00:00:00");
-  const b = new Date(dateB + "T00:00:00");
-  const diffMs = b.getTime() - a.getTime();
-  return diffMs === 86400000; // exactly 1 day in ms
-}
-
-function defaultActivityLevels(baseLevel: number): Record<string, ActivityProgress> {
-  const levels: Record<string, ActivityProgress> = {};
-  ALL_ACTIVITIES.forEach((a) => {
-    levels[a] = { level: baseLevel, perfectStreak: 0, lastPerfectDate: null };
-  });
-  return levels;
-}
-
-function loadState(): GameState {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Migrate: if no activityLevels, create from global level
-      if (!parsed.activityLevels) {
-        parsed.activityLevels = defaultActivityLevels(parsed.level || 2);
-      }
-      if (Array.isArray(parsed.storyHistory)) {
-        parsed.storyHistory = parsed.storyHistory.map(
-          (r: StoryRecord & { storyKey?: string }, i: number) => ({
-            ...r,
-            storyKey: r.storyKey ?? `legacy-${r.date}-${r.activityType}-${i}`,
-          }),
-        );
-      }
-      return parsed;
-    }
-  } catch {}
+function createDefaultState(grade: Grade = 1): GameState {
   return {
-    level: 2,
-    stars: 0,
-    currentStage: "seed",
-    stageIndex: 0,
-    flowers: 0,
-    totalCorrect: 0,
-    perfectStreak: 0,
-    storyHistory: [],
-    activityLevels: defaultActivityLevels(2),
+    playerName: '',
+    grade,
+    title: 'Seed Keeper',
+    xp: 0,
+    level: 1,
+    streak: 0,
+    lastPlayedDate: '',
+    powerCharges: [],
+    unlockedPowers: ['story_fire'],
+    plants: DEFAULT_PLANTS,
+    frostbiteDefeatMeter: 0,
+    activitiesCompletedToday: 0,
+    bossEncountersWon: 0,
+    lastBossDate: '',
+    sessionStartTime: Date.now(),
   };
 }
 
-function saveState(state: GameState) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {}
+function applyOvernightFrost(state: GameState): { state: GameState; message: string | null } {
+  const today = new Date().toISOString().split('T')[0];
+  if (state.lastPlayedDate === today) return { state, message: null };
+
+  const bloomedPlants = state.plants.filter(p => p.bloomed && p.frostLevel < 2);
+  if (bloomedPlants.length === 0) return { state, message: null };
+
+  const target = bloomedPlants[Math.floor(Math.random() * bloomedPlants.length)];
+  const updatedPlants = state.plants.map(p =>
+    p.id === target.id ? { ...p, frostLevel: p.frostLevel + 1 } : p
+  );
+
+  const message = FROSTBITE_OVERNIGHT_MESSAGES[
+    Math.floor(Math.random() * FROSTBITE_OVERNIGHT_MESSAGES.length)
+  ];
+
+  return { state: { ...state, plants: updatedPlants }, message };
 }
 
 export function useGameState() {
-  const [state, setState] = useState<GameState>(loadState);
+  const queryClient = useQueryClient();
+  const [gameState, setGameStateRaw] = useState<GameState | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [overnightMessage, setOvernightMessage] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  /** Per-answer: stats only; garden growth is tied to perfect activities (see awardPerfectActivity). */
-  const handleCorrectAnswer = useCallback(() => {
-    setState((prev) => {
-      const next = { ...prev, totalCorrect: prev.totalCorrect + 1 };
-      saveState(next);
-      return next;
-    });
-  }, []);
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id ?? null);
 
-  /**
-   * Star + one garden growth step when an activity is submitted at 100% (Activity page applies Reading-path rules).
-   * Every STAGES.length perfect completions adds a flower, same as the old per-answer cycle.
-   */
-  const awardPerfectActivity = useCallback(() => {
-    setState((prev) => {
-      const nextStageIndex = prev.stageIndex + 1;
-      const flowerComplete = nextStageIndex >= STAGES.length;
-      const next: GameState = {
-        ...prev,
-        stars: prev.stars + 1,
-        stageIndex: flowerComplete ? 0 : nextStageIndex,
-        currentStage: flowerComplete ? "seed" : STAGES[nextStageIndex],
-        flowers: flowerComplete ? prev.flowers + 1 : prev.flowers,
-      };
-      saveState(next);
-      return next;
-    });
-  }, []);
+      let raw: GameState | null = null;
 
-  const completeStory = useCallback(
-    (activityType: string, totalQuestions: number, correctAnswers: number, storyKey: string) => {
-    setState((prev) => {
-      const perfect = correctAnswers === totalQuestions;
-      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-
-      const activityLevels = { ...prev.activityLevels };
-      const current = activityLevels[activityType] || { level: 2, perfectStreak: 0, lastPerfectDate: null };
-
-      let newStreak = current.perfectStreak;
-      let lastDate = current.lastPerfectDate;
-
-      if (perfect) {
-        if (lastDate === today) {
-          // Already counted today — streak stays the same
-        } else if (lastDate && isConsecutiveDay(lastDate, today)) {
-          // New consecutive day
-          newStreak = current.perfectStreak + 1;
-          lastDate = today;
-        } else {
-          // First day or streak broken (gap > 1 day)
-          newStreak = 1;
-          lastDate = today;
+      if (user) {
+        const { data, error } = await supabase
+          .from('game_progress')
+          .select('game_state')
+          .eq('user_id', user.id)
+          .single();
+        if (!error && data?.game_state) {
+          raw = data.game_state as GameState;
         }
-      } else {
-        // Not perfect — reset streak
-        newStreak = 0;
-        lastDate = null;
       }
 
-      const shouldLevelUp = newStreak >= PERFECT_DAYS_TO_LEVEL_UP && current.level < 5;
+      if (!raw) {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          try { raw = JSON.parse(stored); } catch { raw = null; }
+        }
+      }
 
-      activityLevels[activityType] = {
-        level: shouldLevelUp ? current.level + 1 : current.level,
-        perfectStreak: shouldLevelUp ? 0 : newStreak,
-        lastPerfectDate: shouldLevelUp ? null : lastDate,
-      };
+      if (!raw) raw = createDefaultState();
 
-      // Global level = minimum across all activities (or you could use max; using min keeps overall conservative)
-      const allLevels = ALL_ACTIVITIES.map((a) => activityLevels[a]?.level || 2);
-      const globalLevel = Math.min(...allLevels);
-
-      const record: StoryRecord = {
-        storyKey,
-        activityType,
-        date: new Date().toISOString(),
-        totalQuestions,
-        correctAnswers,
-        perfect,
-        level: activityLevels[activityType].level,
-      };
-
-      // Also update legacy perfectStreak for backward compat
-      const globalStreak = perfect ? prev.perfectStreak + 1 : 0;
-
-      const next: GameState = {
-        ...prev,
-        perfectStreak: globalStreak,
-        level: globalLevel,
-        activityLevels,
-        storyHistory: [...prev.storyHistory, record],
-      };
-      saveState(next);
-      return next;
-    });
+      const { state: frosted, message } = applyOvernightFrost(raw);
+      setOvernightMessage(message);
+      setGameStateRaw(frosted);
+      setLoading(false);
+    }
+    load();
   }, []);
 
-  const getActivityLevel = useCallback((activityType: string): ActivityProgress => {
-    return state.activityLevels?.[activityType] || { level: 2, perfectStreak: 0, lastPerfectDate: null };
-  }, [state.activityLevels]);
+  const persist = useCallback(async (state: GameState) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (userId) {
+      await supabase
+        .from('game_progress')
+        .upsert(
+          { user_id: userId, game_state: state as any, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id' }
+        );
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+    }
+  }, [userId, queryClient]);
 
-  return { ...state, handleCorrectAnswer, awardPerfectActivity, completeStory, getActivityLevel };
+  const setGameState = useCallback((updater: (prev: GameState) => GameState) => {
+    setGameStateRaw(prev => {
+      if (!prev) return prev;
+      const next = updater(prev);
+      persist(next);
+      return next;
+    });
+  }, [persist]);
+
+  const recordAnswer = useCallback((
+    activityType: string,
+    correct: boolean,
+    powerEarned?: PowerType
+  ) => {
+    setGameState(prev => {
+      const xpGain = getXPForActivity(correct, activityType);
+      const newXP = prev.xp + xpGain;
+      const newLevel = getLevelFromXP(newXP);
+      const newTitle = LEVEL_TITLES[newLevel];
+
+      let newCharges = [...prev.powerCharges];
+      if (correct && powerEarned && newCharges.length < POWER_CHARGE_MAX) {
+        newCharges.push(powerEarned);
+      }
+
+      const newUnlocked = [...prev.unlockedPowers];
+      const powersByLevel: Record<number, PowerType[]> = {
+        2: ['word_lightning', 'truth_shield'],
+        3: ['mind_whirl', 'heart_heal'],
+        4: ['vision_orb'],
+      };
+      if (powersByLevel[newLevel]) {
+        powersByLevel[newLevel].forEach(p => {
+          if (!newUnlocked.includes(p)) newUnlocked.push(p);
+        });
+      }
+
+      return { ...prev, xp: newXP, level: newLevel, title: newTitle, powerCharges: newCharges, unlockedPowers: newUnlocked };
+    });
+  }, [setGameState]);
+
+  const recordActivityComplete = useCallback((activityType: string) => {
+    setGameState(prev => {
+      const today = new Date().toISOString().split('T')[0];
+      const isNewDay = prev.lastPlayedDate !== today;
+      return {
+        ...prev,
+        activitiesCompletedToday: isNewDay ? 1 : prev.activitiesCompletedToday + 1,
+        streak: isNewDay ? prev.streak + 1 : prev.streak,
+        lastPlayedDate: today,
+        frostbiteDefeatMeter: Math.min(100, prev.frostbiteDefeatMeter + 4),
+      };
+    });
+  }, [setGameState]);
+
+  // Kept for compatibility but no longer used — boss is triggered directly
+  // in Activity.tsx after a submit, not on page load.
+  const shouldTriggerBoss = useCallback((): boolean => false, []);
+
+  const recordBossWin = useCallback(() => {
+    setGameState(prev => ({
+      ...prev,
+      bossEncountersWon: prev.bossEncountersWon + 1,
+      lastBossDate: new Date().toISOString().split('T')[0],
+      frostbiteDefeatMeter: Math.min(100, prev.frostbiteDefeatMeter + 15),
+      xp: prev.xp + 100,
+    }));
+  }, [setGameState]);
+
+  const usePowerCharge = useCallback((powerType: PowerType) => {
+    setGameState(prev => ({
+      ...prev,
+      powerCharges: prev.powerCharges.filter((_, i) => {
+        const idx = prev.powerCharges.indexOf(powerType);
+        return i !== idx;
+      }),
+    }));
+  }, [setGameState]);
+
+  const thawPlant = useCallback((plantId: string) => {
+    setGameState(prev => ({
+      ...prev,
+      plants: prev.plants.map(p =>
+        p.id === plantId ? { ...p, frostLevel: Math.max(0, p.frostLevel - 1) } : p
+      ),
+    }));
+  }, [setGameState]);
+
+  const bloomPlant = useCallback((plantId: string) => {
+    setGameState(prev => ({
+      ...prev,
+      plants: prev.plants.map(p =>
+        p.id === plantId ? { ...p, bloomed: true, frostLevel: 0 } : p
+      ),
+    }));
+  }, [setGameState]);
+
+  const updateGrade = useCallback((grade: Grade) => {
+    setGameState(prev => ({ ...prev, grade }));
+  }, [setGameState]);
+
+  const updatePlayerName = useCallback((name: string) => {
+    setGameState(prev => ({ ...prev, playerName: name }));
+  }, [setGameState]);
+
+  const xpProgress = gameState
+    ? (() => {
+        const lvl = gameState.level;
+        const current = gameState.xp - (XP_THRESHOLDS[lvl] ?? 0);
+        const needed = (XP_THRESHOLDS[lvl + 1] ?? XP_THRESHOLDS[5]) - (XP_THRESHOLDS[lvl] ?? 0);
+        return Math.min(100, Math.round((current / needed) * 100));
+      })()
+    : 0;
+
+  return {
+    gameState,
+    loading,
+    overnightMessage,
+    xpProgress,
+    recordAnswer,
+    recordActivityComplete,
+    shouldTriggerBoss,
+    recordBossWin,
+    usePowerCharge,
+    thawPlant,
+    bloomPlant,
+    updateGrade,
+    updatePlayerName,
+  };
 }
+
+// ── Legacy type exports (used by Garden.tsx / Progress.tsx) ──────────────
+export type PlantStage = 'seed' | 'sprout' | 'leaves' | 'bud' | 'flower';
+export const LEVEL_TO_STAGE: Record<number, PlantStage> = {
+  1: 'seed', 2: 'sprout', 3: 'leaves', 4: 'bud', 5: 'flower',
+};

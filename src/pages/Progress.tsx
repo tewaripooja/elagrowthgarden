@@ -2,57 +2,10 @@ import { useNavigate } from "react-router-dom";
 import DynamicSky from "@/components/DynamicSky";
 import { ArrowLeft } from "lucide-react";
 import Garden from "@/components/Garden";
-import { useGameState, type StoryRecord } from "@/hooks/useGameState";
-
-// ─── Data helpers ─────────────────────────────────────────────────────────────
-
-const ALL_ACTIVITIES = [
-  "vocabulary", "fact-opinion", "summaries", "character-traits", "compare-contrast",
-] as const;
-type ActivityId = typeof ALL_ACTIVITIES[number];
-
-const ACTIVITY_META: Record<ActivityId, { label: string; emoji: string; bar: string }> = {
-  vocabulary:         { label: "Vocabulary",         emoji: "📚", bar: "#F0A800" },
-  "fact-opinion":     { label: "Fact vs Opinion",    emoji: "✅", bar: "#3498DB" },
-  summaries:          { label: "Summaries",           emoji: "📝", bar: "#C8A000" },
-  "character-traits": { label: "Character Traits",   emoji: "🎭", bar: "#27ae60" },
-  "compare-contrast": { label: "Compare & Contrast", emoji: "🔀", bar: "#00BCD4" },
-};
-
-function groupByStory(history: StoryRecord[]) {
-  const m = new Map<string, StoryRecord[]>();
-  history.forEach((r) => { const list = m.get(r.storyKey) ?? []; list.push(r); m.set(r.storyKey, list); });
-  return m;
-}
-
-function completeStoryKeys(history: StoryRecord[]): Set<string> {
-  const groups = groupByStory(history);
-  const complete = new Set<string>();
-  groups.forEach((records, key) => {
-    if (ALL_ACTIVITIES.every((a) => records.some((r) => r.activityType === a && r.perfect)))
-      complete.add(key);
-  });
-  return complete;
-}
-
-function activityPct(history: StoryRecord[], actType: string, completeKeys: Set<string>): number {
-  const rows = history.filter((r) => completeKeys.has(r.storyKey) && r.activityType === actType);
-  if (!rows.length) return 0;
-  const c = rows.reduce((s, r) => s + r.correctAnswers, 0);
-  const t = rows.reduce((s, r) => s + r.totalQuestions, 0);
-  return t > 0 ? Math.round((c / t) * 100) : 0;
-}
+import { useGameState, LEVEL_TO_STAGE } from "@/hooks/useGameState";
+import { XP_THRESHOLDS, LEVEL_TITLES } from "@/data/frostbiteGameData";
 
 // ─── Mini components ──────────────────────────────────────────────────────────
-
-function StarRating({ pct }: { pct: number }) {
-  const n = pct >= 95 ? 3 : pct >= 70 ? 2 : pct >= 40 ? 1 : 0;
-  return (
-    <span style={{ fontSize: 11, letterSpacing: 1 }}>
-      {[1,2,3].map((i) => <span key={i} style={{ opacity: i <= n ? 1 : 0.2 }}>⭐</span>)}
-    </span>
-  );
-}
 
 function PipFace() {
   return (
@@ -93,29 +46,38 @@ function Badge({ emoji, label, earned }: { emoji: string; label: string; earned:
 
 export default function Progress() {
   const navigate = useNavigate();
-  const gs = useGameState();
+  const { gameState: gs, xpProgress } = useGameState();
 
-  const completeKeys = completeStoryKeys(gs.storyHistory);
-  const totalStories = completeKeys.size;
-  const scores = Object.fromEntries(ALL_ACTIVITIES.map((a) => [a, activityPct(gs.storyHistory, a, completeKeys)]));
-  const avgScore = Math.round(ALL_ACTIVITIES.reduce((s, a) => s + scores[a], 0) / ALL_ACTIVITIES.length);
+  const level      = gs?.level ?? 1;
+  const xp         = gs?.xp ?? 0;
+  const streak     = gs?.streak ?? 0;
+  const bosses     = gs?.bossEncountersWon ?? 0;
+  const title      = gs?.title ?? LEVEL_TITLES[1];
+  const stage      = LEVEL_TO_STAGE[level];
+  const frostMeter = gs?.frostbiteDefeatMeter ?? 0;
+  const bloomedPlants = gs?.plants.filter(p => p.bloomed).length ?? 0;
+
+  const nextLevelXP  = XP_THRESHOLDS[level + 1] ?? XP_THRESHOLDS[5];
+  const thisLevelXP  = XP_THRESHOLDS[level] ?? 0;
+  const xpInLevel    = xp - thisLevelXP;
+  const xpNeeded     = nextLevelXP - thisLevelXP;
 
   const pipMsg =
-    gs.stars >= 10   ? "You're a superstar! Amazing! 🌟" :
-    gs.stars >= 5    ? "Look at all those stars! 🌟" :
-    totalStories >= 3 ? "So many stories — I'm proud! 📖" :
-    gs.flowers > 0   ? "Your garden is blooming! 🌸" :
-                       "Read a story to start your garden! 🌱";
+    bosses >= 5   ? "Frostbite fears you now! ❄️🏆" :
+    level >= 4    ? "You're almost a Grand Cultivator! 🌟" :
+    streak >= 7   ? `${streak}-day streak! You're on fire! 🔥` :
+    bosses >= 1   ? "You've beaten Frostbite! Keep going! 💪" :
+                    "Read stories to level up your garden! 🌱";
 
   const achievements = [
-    { emoji:"🌱", label:"First Story",  earned: gs.storyHistory.length > 0 },
-    { emoji:"⭐", label:"First Star",   earned: gs.stars >= 1 },
-    { emoji:"🌸", label:"1st Flower",   earned: gs.flowers >= 1 },
-    { emoji:"📚", label:"5 Stories",    earned: totalStories >= 5 },
-    { emoji:"🔥", label:"3-Day Streak", earned: (gs.perfectStreak || 0) >= 3 },
-    { emoji:"🏆", label:"10 Stars",     earned: gs.stars >= 10 },
-    { emoji:"🌳", label:"Full Tree",    earned: gs.flowers >= 20 },
-    { emoji:"💎", label:"All Perfect",  earned: avgScore === 100 && totalStories > 0 },
+    { emoji:"🌱", label:"First Session",    earned: (gs?.lastPlayedDate ?? '') !== '' },
+    { emoji:"⭐", label:"50 XP",            earned: xp >= 50 },
+    { emoji:"🔥", label:"3-Day Streak",     earned: streak >= 3 },
+    { emoji:"🧊", label:"Beat Frostbite",   earned: bosses >= 1 },
+    { emoji:"🌸", label:"3 Plants",         earned: bloomedPlants >= 3 },
+    { emoji:"📚", label:"Level 3",          earned: level >= 3 },
+    { emoji:"🔥", label:"7-Day Streak",     earned: streak >= 7 },
+    { emoji:"🏆", label:"Level 5",          earned: level >= 5 },
   ];
 
   const font = "'Nunito',sans-serif";
@@ -147,26 +109,24 @@ export default function Progress() {
         <div style={{ background:"#f0fae8", flex:1, padding:"14px 14px 24px" }}>
           <div style={{ maxWidth:680, margin:"0 auto", display:"flex", flexDirection:"column", gap:12 }}>
 
-            {/* ── SECTION 1: Stats + Pip merged ── */}
+            {/* ── SECTION 1: Stats + Pip ── */}
             <div style={{ ...card, display:"flex", alignItems:"center", gap:12 }}>
-              {/* Stat pills in a compact 2×2 grid */}
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, flex:1 }}>
                 {[
-                  { e:"⭐", v:gs.stars,              l:"Stars",   bg:"#fffde7", b:"#FFD700" },
-                  { e:"🌸", v:gs.flowers,             l:"Flowers", bg:"#fce4ec", b:"#e91e63" },
-                  { e:"📖", v:totalStories,            l:"Stories", bg:"#e8f5e9", b:"#4caf50" },
-                  { e:"🔥", v:gs.perfectStreak || 0,  l:"Streak",  bg:"#fff3e0", b:"#ff9800" },
+                  { e:"⭐", v: xp,      l:"Total XP",  bg:"#fffde7", b:"#FFD700" },
+                  { e:"📚", v: title,   l:"Title",     bg:"#e8f5e9", b:"#4caf50" },
+                  { e:"🔥", v: streak,  l:"Streak",    bg:"#fff3e0", b:"#ff9800" },
+                  { e:"🧊", v: bosses,  l:"Bosses Won",bg:"#e3f2fd", b:"#2196f3" },
                 ].map(({ e, v, l, bg, b }) => (
                   <div key={l} style={{ background:bg, border:`2px solid ${b}`, borderRadius:14, padding:"9px 10px", display:"flex", alignItems:"center", gap:8, boxShadow:`0 3px 0 0 ${b}55` }}>
                     <span style={{ fontSize:20 }}>{e}</span>
                     <div>
-                      <div style={{ fontSize:18, fontWeight:900, color:"#2a3a2a", fontFamily:font, lineHeight:1 }}>{v}</div>
+                      <div style={{ fontSize: typeof v === 'string' ? 10 : 18, fontWeight:900, color:"#2a3a2a", fontFamily:font, lineHeight:1 }}>{v}</div>
                       <div style={{ fontSize:10, fontWeight:700, color:"#6a8a6a", fontFamily:font }}>{l}</div>
                     </div>
                   </div>
                 ))}
               </div>
-              {/* Pip + message */}
               <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:6, minWidth:90, maxWidth:110 }}>
                 <PipFace/>
                 <div style={{ fontSize:11, fontWeight:700, color:"#3a5a3a", fontFamily:font, textAlign:"center", lineHeight:1.35 }}>
@@ -175,63 +135,48 @@ export default function Progress() {
               </div>
             </div>
 
-            {/* ── SECTION 2: Activity Scores (compact bar rows) ── */}
+            {/* ── SECTION 2: XP Level Progress ── */}
             <div style={card}>
-              <div style={{ fontSize:14, fontWeight:800, color:"#3a5a2a", marginBottom:10, fontFamily:font }}>
-                Activity Scores 🚀
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+                <span style={{ fontSize:14, fontWeight:800, color:"#3a5a2a", fontFamily:font }}>
+                  Level {level} — {title}
+                </span>
+                <span style={{ fontSize:12, fontWeight:700, color:"#7a9a6a", fontFamily:font }}>
+                  {level < 5 ? `${xpInLevel} / ${xpNeeded} XP` : "MAX LEVEL"}
+                </span>
               </div>
-              {totalStories === 0 ? (
-                <div style={{ fontSize:13, color:"#bbb", fontWeight:600, fontFamily:font, padding:"6px 0" }}>
-                  Complete a full story to see scores 🌱
+              <div style={{ background:"#e0f0cc", borderRadius:10, height:13, overflow:"hidden" }}>
+                <div style={{ height:"100%", background:"linear-gradient(90deg,#5BBD4E,#27ae60)", borderRadius:10, transition:"width .6s ease", width:`${xpProgress}%` }}/>
+              </div>
+              {/* Frostbite defeat meter */}
+              <div style={{ marginTop:10 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                  <span style={{ fontSize:12, fontWeight:700, color:"#4a90a0", fontFamily:font }}>❄️ Frostbite Defeat Meter</span>
+                  <span style={{ fontSize:12, fontWeight:700, color:"#4a90a0", fontFamily:font }}>{frostMeter}%</span>
                 </div>
-              ) : (
-                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                  {ALL_ACTIVITIES.map((a) => {
-                    const meta = ACTIVITY_META[a];
-                    const pct  = scores[a];
-                    return (
-                      <div key={a} style={{ display:"flex", alignItems:"center", gap:10 }}>
-                        <span style={{ fontSize:16, flexShrink:0 }}>{meta.emoji}</span>
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
-                            <span style={{ fontSize:12, fontWeight:700, color:"#3a3a5a", fontFamily:font }}>{meta.label}</span>
-                            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                              <StarRating pct={pct}/>
-                              <span style={{ fontSize:12, fontWeight:800, color:"#2a3a2a", fontFamily:font, minWidth:30, textAlign:"right" }}>
-                                {pct === 0 ? "—" : `${pct}%`}
-                              </span>
-                            </div>
-                          </div>
-                          <div style={{ background:"#eef0ea", borderRadius:6, height:8, overflow:"hidden" }}>
-                            <div style={{ height:"100%", width:`${pct}%`, background:`linear-gradient(90deg,${meta.bar}cc,${meta.bar})`, borderRadius:6, transition:"width .8s ease" }}/>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div style={{ background:"#d0e8f0", borderRadius:10, height:10, overflow:"hidden" }}>
+                  <div style={{ height:"100%", background:"linear-gradient(90deg,#7EC8E3,#27ae60)", borderRadius:10, transition:"width .6s ease", width:`${frostMeter}%` }}/>
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* ── SECTION 3: Garden + Achievements side-by-side ── */}
+            {/* ── SECTION 3: Garden + Achievements ── */}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
 
               {/* Garden */}
               <div style={{ ...card, display:"flex", flexDirection:"column", gap:8 }}>
                 <div style={{ fontSize:14, fontWeight:800, color:"#3a5a2a", fontFamily:font }}>My Garden 🌱</div>
                 <div style={{ fontSize:11, fontWeight:600, color:"#7a9a6a", fontFamily:font }}>
-                  <span style={{ textTransform:"capitalize" }}>{gs.currentStage}</span> · {gs.flowers} 🌸
+                  {title} · {bloomedPlants} 🌸
                 </div>
                 <div style={{ background:"#e0f0cc", borderRadius:8, height:8, overflow:"hidden" }}>
-                  <div style={{ height:"100%", width:`${Math.min(100,(gs.stageIndex/5)*100)}%`, background:"linear-gradient(90deg,#5BBD4E,#27ae60)", borderRadius:8, transition:"width .8s ease" }}/>
+                  <div style={{ height:"100%", width:`${xpProgress}%`, background:"linear-gradient(90deg,#5BBD4E,#27ae60)", borderRadius:8, transition:"width .8s ease" }}/>
                 </div>
                 <div style={{ transform:"scale(0.85)", transformOrigin:"top center", marginTop:-8 }}>
-                  <Garden currentStage={gs.currentStage} flowers={gs.flowers}/>
+                  <Garden currentStage={stage} flowers={bloomedPlants}/>
                 </div>
                 <div style={{ fontSize:11, fontWeight:600, color:"#5a7a5a", fontFamily:font, textAlign:"center", marginTop:-4 }}>
-                  {gs.currentStage === "flower"
-                    ? "Full bloom! 🌸"
-                    : `${5 - gs.stageIndex} more to next stage`}
+                  {level === 5 ? "Full bloom! 🌸" : `${xpNeeded - xpInLevel} XP to next stage`}
                 </div>
               </div>
 

@@ -5,6 +5,8 @@ import { getGradeLevel, GRADE_META } from "@/lib/gradeLevel";
 import DynamicSky from "@/components/DynamicSky";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGameState } from "@/hooks/useGameState";
+import { ParentDashboard } from "@/components/dashboard/ParentDashboard";
+import { toast } from "sonner";
 import type { ActivityType } from "@/lib/ai";
 
 const ACTIVITY_TAB_BY_LABEL: Record<string, ActivityType> = {
@@ -17,7 +19,6 @@ const ACTIVITY_TAB_BY_LABEL: Record<string, ActivityType> = {
 };
 
 const ACTIVITY_CARDS = [
-  { label: "Reading",           icon: "📖", gradient: "linear-gradient(135deg,#FFD580,#FFB347)", shadow: "rgba(255,150,50,.35)", fromReading: true  },
   { label: "Vocabulary",        icon: "🔤", gradient: "linear-gradient(135deg,#E8B4F8,#C084FC)", shadow: "rgba(192,100,255,.30)", fromReading: false },
   { label: "Fact vs Opinion",   icon: "✅", gradient: "linear-gradient(135deg,#B8D8F8,#7EC8F8)", shadow: "rgba(60,160,240,.28)",  fromReading: false },
   { label: "Summaries",         icon: "📝", gradient: "linear-gradient(135deg,#F8F0A0,#F0D040)", shadow: "rgba(220,180,0,.30)",   fromReading: false },
@@ -76,9 +77,10 @@ function PipMascot({ onClick }: { onClick: () => void }) {
 export default function Index() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const gameState = useGameState();
+  const { gameState: gs, xpProgress, overnightMessage } = useGameState();
   const [pipMsg, setPipMsg] = useState(0);
   const [pipKey, setPipKey] = useState(0);
+  const [showDashboard, setShowDashboard] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -88,13 +90,20 @@ export default function Index() {
     return () => clearInterval(id);
   }, []);
 
+  // Show overnight frost message once on load
+  useEffect(() => {
+    if (overnightMessage) {
+      toast("Frostbite visited! ❄️", { description: overnightMessage });
+    }
+  }, [overnightMessage]);
+
+
   const handlePipClick = () => {
     setPipMsg((m) => (m + 1) % PIP_MESSAGES.length);
     setPipKey((k) => k + 1);
   };
 
-  const stageSteps = 5;
-  const progressPct = Math.min(100, Math.round((gameState.stageIndex / stageSteps) * 100));
+  const progressPct = xpProgress;
 
   return (
     <DynamicSky>
@@ -108,10 +117,10 @@ export default function Index() {
           <div style={{ display:"flex", gap:8, alignItems:"center" }}>
             {/* Stats pills */}
             <div style={{ background:"rgba(255,255,255,.88)", borderRadius:20, padding:"5px 13px", fontSize:13, fontWeight:800, color:"#3a5a2a", display:"flex", alignItems:"center", gap:5 }}>
-              🔥 {gameState.perfectStreak || 0}
+              🔥 {gs?.streak ?? 0}
             </div>
             <div style={{ background:"rgba(255,255,255,.88)", borderRadius:20, padding:"5px 13px", fontSize:13, fontWeight:800, color:"#3a5a2a", display:"flex", alignItems:"center", gap:5 }}>
-              ⭐ {gameState.stars}
+              ⭐ {gs?.xp ?? 0} XP
             </div>
             {/* Grade pill */}
             {(() => {
@@ -194,14 +203,15 @@ export default function Index() {
               Choose an Activity
             </div>
 
-            {/* Activity cards — 3 columns, 2 rows */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:12 }}>
-              {ACTIVITY_CARDS.map((a) => (
+            {/* Activity cards — 2 columns, last card centred via subgrid trick */}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:12 }}>
+              {ACTIVITY_CARDS.map((a, idx) => (
                 <button
                   key={a.label}
                   type="button"
                   onClick={() => navigate("/activity", { state: { activityTab: ACTIVITY_TAB_BY_LABEL[a.label] ?? "vocabulary", fromReading: a.fromReading } })}
                   style={{
+                    gridColumn: idx === 4 ? "1 / -1" : undefined,
                     background: a.gradient,
                     borderRadius: 20,
                     padding: "18px 10px 16px",
@@ -242,22 +252,43 @@ export default function Index() {
             <div style={{ background:"#fff", borderRadius:16, padding:"14px 18px", boxShadow:"0 2px 8px rgba(0,0,0,.06)" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
                 <div style={{ fontSize:13, fontWeight:800, color:"#5a7a4a", fontFamily:"'Nunito',sans-serif" }}>
-                  🌻 Garden Progress — <span style={{ textTransform:"capitalize" }}>{gameState.currentStage}</span>
+                  🌻 Garden Progress — <span>{gs?.title ?? 'Seed Keeper'}</span>
                 </div>
                 <div style={{ fontSize:12, fontWeight:700, color:"#7a9a6a" }}>
-                  {gameState.flowers} 🌸
+                  Lv.{gs?.level ?? 1} 🏅
                 </div>
               </div>
               <div style={{ background:"#e0f0cc", borderRadius:10, height:13, overflow:"hidden" }}>
                 <div style={{ height:"100%", background:"linear-gradient(90deg,#5BBD4E,#27ae60)", borderRadius:10, transition:"width .6s ease", width:`${progressPct}%` }} />
               </div>
               <div style={{ fontSize:12, color:"#7a9a6a", marginTop:6, fontWeight:600, fontFamily:"'Nunito',sans-serif" }}>
-                {5 - gameState.stageIndex} more perfect activities to reach the next stage!
+                {gs?.level === 5 ? "Max level reached! 🏆" : `Keep going to reach the next level!`}
               </div>
             </div>
 
-            {/* My Progress button */}
-            <div style={{ display:"flex", justifyContent:"center" }}>
+            {/* Parent Dashboard + My Progress buttons */}
+            <div style={{ display:"flex", justifyContent:"center", gap:10 }}>
+              <button
+                type="button"
+                onClick={() => setShowDashboard(true)}
+                style={{
+                  background: "rgba(255,255,255,.9)",
+                  color: "#3a5a2a",
+                  border: "2px solid #c8e8a0",
+                  borderRadius: 18,
+                  padding: "12px 20px",
+                  fontSize: 14,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  boxShadow: "0 4px 0 0 rgba(91,189,78,.25)",
+                  fontFamily: "'Nunito',sans-serif",
+                }}
+              >
+                👪 Parent
+              </button>
               <button
                 type="button"
                 onClick={() => navigate("/progress")}
@@ -288,6 +319,14 @@ export default function Index() {
         </div>
 
       </div>
+
+      {/* ── Parent Dashboard overlay ── */}
+      {showDashboard && (
+        <div style={{ position:"fixed", inset:0, zIndex:1000 }}>
+          <ParentDashboard onClose={() => setShowDashboard(false)} />
+        </div>
+      )}
+
     </DynamicSky>
   );
 }

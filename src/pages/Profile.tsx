@@ -66,7 +66,7 @@ function StatCard({ icon, label, value }: { icon: string; label: string; value: 
 export default function Profile() {
   const navigate = useNavigate();
   const { session, signOut } = useAuth();
-  const gameState = useGameState();
+  const { gameState: gs } = useGameState();
   const user = session?.user;
 
   const displayName: string =
@@ -162,9 +162,9 @@ export default function Profile() {
 
             {/* Stats row */}
             <div style={{ display: "flex", gap: 10 }}>
-              <StatCard icon="⭐" label="Stars" value={gameState.stars} />
-              <StatCard icon="🔥" label="Streak" value={gameState.perfectStreak || 0} />
-              <StatCard icon="📚" label="Level" value={gameState.level} />
+              <StatCard icon="⭐" label="XP" value={gs?.xp ?? 0} />
+              <StatCard icon="🔥" label="Streak" value={gs?.streak ?? 0} />
+              <StatCard icon="📚" label="Level" value={gs?.level ?? 1} />
             </div>
 
             {/* Grade section */}

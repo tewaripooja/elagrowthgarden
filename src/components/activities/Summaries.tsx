@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SummariesData, SummaryOption } from "@/lib/ai";
 import type { QuestionResolution } from "@/lib/activityScoring";
+import { splitIntoSentences } from "@/lib/storySections";
 import QuickReflection from "@/components/QuickReflection";
 import { Button } from "@/components/ui/button";
 import EvidenceSentencePicker from "@/components/EvidenceSentencePicker";
@@ -170,20 +171,48 @@ export default function Summaries({
   const lockedOut = passed || revealed;
   const freezeChoices = lockedOut || reflecting;
 
+  // Pre-select 3–4 sentences to show as evidence candidates.
+  // Score every sentence against the correct option text, then pick:
+  //   • top 2 highest-scoring sentences (the likely correct evidence)
+  //   • 1–2 mid/low-scoring sentences as distractors
+  // The original sentence indices are preserved so isEvidenceAcceptable still works.
+  const evidenceCandidates = useMemo(() => {
+    const sentences = splitIntoSentences(mainStory ?? "");
+    const refText = correctOption?.text ?? "";
+    if (!refText || sentences.length <= 4) return undefined; // show all when story is very short
+
+    // Simple word-overlap score (mirrors evidenceValidation.ts)
+    const refWords = new Set(
+      (refText.toLowerCase().match(/\b[a-z]{3,}\b/g) ?? [])
+    );
+    const scores = sentences.map(s => {
+      const words = s.toLowerCase().match(/\b[a-z]{3,}\b/g) ?? [];
+      return words.filter(w => refWords.has(w)).length;
+    });
+
+    // Sort indices by score descending
+    const ranked = scores
+      .map((score, idx) => ({ idx, score }))
+      .sort((a, b) => b.score - a.score);
+
+    const top = ranked.slice(0, 2).map(r => r.idx);                 // 2 best
+    const rest = ranked.slice(2);
+    // pick 1–2 distractors from the middle of the ranked list
+    const midStart = Math.floor(rest.length / 3);
+    const distractors = rest
+      .slice(midStart, midStart + 2)
+      .map(r => r.idx);
+
+    // Combine and sort by original position so reading order is preserved
+    return [...new Set([...top, ...distractors])].sort((a, b) => a - b);
+  }, [mainStory, correctOption?.text]);
+
   return (
     <div className="space-y-4">
       <h3 className="font-heading text-lg text-foreground">📝 Pick the Best Summary</h3>
       <p className="text-sm text-muted-foreground font-body">
-        Choose an answer and tap a sentence that supports it — both must fit before you continue.
+        Pick the best summary, then tap a sentence from the story that supports your choice.
       </p>
-
-      <EvidenceSentencePicker
-        story={mainStory}
-        selectedIndex={evidenceIdx}
-        onSelect={setEvidenceIdx}
-        disabled={freezeChoices}
-        vocabularyWords={vocabularyWords}
-      />
 
       <div className="space-y-2">
         <p className="text-sm font-heading font-semibold text-foreground">Which summary is best?</p>
@@ -204,6 +233,15 @@ export default function Summaries({
           );
         })}
       </div>
+
+      <EvidenceSentencePicker
+        story={mainStory}
+        selectedIndex={evidenceIdx}
+        onSelect={setEvidenceIdx}
+        disabled={freezeChoices}
+        vocabularyWords={vocabularyWords}
+        candidateIndices={evidenceCandidates}
+      />
 
       <Button
         type="button"

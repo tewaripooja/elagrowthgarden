@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CharacterTraitsData } from "@/lib/ai";
+import { splitIntoSentences } from "@/lib/storySections";
 import type { QuestionResolution } from "@/lib/activityScoring";
 import QuickReflection from "@/components/QuickReflection";
 import { Button } from "@/components/ui/button";
@@ -313,6 +314,35 @@ export default function CharacterTraits({
     setReflectingQi(qIndex);
   };
 
+  // Pre-compute 3–4 evidence sentence candidates per question using word-overlap scoring.
+  const evidenceCandidatesByQuestion = useMemo(() => {
+    const sentences = splitIntoSentences(mainStory ?? "");
+    return data.questions.map((q, qi) => {
+      if (!needsEvidence(qi)) return undefined;
+      const slice = presentation[qi];
+      const correctOpt = slice ? slice.options[slice.correctIndex] ?? "" : "";
+      const refText = `${q.question} ${correctOpt}`;
+      if (sentences.length <= 4) return undefined;
+
+      const refWords = new Set(refText.toLowerCase().match(/\b[a-z]{3,}\b/g) ?? []);
+      const scores = sentences.map(s => {
+        const words = s.toLowerCase().match(/\b[a-z]{3,}\b/g) ?? [];
+        return words.filter(w => refWords.has(w)).length;
+      });
+      const ranked = scores
+        .map((score, idx) => ({ idx, score }))
+        .sort((a, b) => b.score - a.score);
+
+      const top = ranked.slice(0, 2).map(r => r.idx);
+      const rest = ranked.slice(2);
+      const midStart = Math.floor(rest.length / 3);
+      const distractors = rest.slice(midStart, midStart + 2).map(r => r.idx);
+
+      return [...new Set([...top, ...distractors])].sort((a, b) => a - b);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mainStory, data.questions]);
+
   return (
     <div className="space-y-5">
       <h3 className="font-heading text-lg text-foreground">🧑 Character Traits</h3>
@@ -403,6 +433,7 @@ export default function CharacterTraits({
               }}
               disabled={freezeEvidenceRow}
               vocabularyWords={vocabularyWords}
+              candidateIndices={evidenceCandidatesByQuestion[qi]}
             />
 
             <div className="grid grid-cols-1 gap-2">

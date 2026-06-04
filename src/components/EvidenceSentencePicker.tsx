@@ -12,6 +12,11 @@ type Props = {
   label?: string;
   /** Optional vocab words — highlighted yellow with click-to-define inside sentences. */
   vocabularyWords?: VocabWord[];
+  /**
+   * When provided, only these sentence indices (into the full story) are shown.
+   * onSelect still receives the original index so validation works unchanged.
+   */
+  candidateIndices?: number[];
 };
 
 /**
@@ -112,8 +117,17 @@ export default function EvidenceSentencePicker({
   disabled,
   label = "Tap a sentence from the story that supports your answer.",
   vocabularyWords = [],
+  candidateIndices,
 }: Props) {
-  const sentences = splitIntoSentences(story ?? "");
+  const allSentences = splitIntoSentences(story ?? "");
+
+  // If a curated shortlist is provided use it, otherwise show everything
+  const visiblePairs: { idx: number; text: string }[] =
+    candidateIndices && candidateIndices.length > 0
+      ? candidateIndices
+          .filter(i => i >= 0 && i < allSentences.length)
+          .map(i => ({ idx: i, text: allSentences[i]! }))
+      : allSentences.map((text, idx) => ({ idx, text }));
 
   // Build lowercase → definition map for fast lookup
   const vocabMap = new Map<string, string>();
@@ -132,16 +146,16 @@ export default function EvidenceSentencePicker({
         )}
       </p>
       <div
-        className="rounded-xl border border-border bg-muted/20 p-3 max-h-[min(280px,45vh)] overflow-y-auto space-y-2"
+        className="rounded-xl border border-border bg-muted/20 p-3 space-y-2"
         role="list"
       >
-        {sentences.map((sentence, i) => {
-          const isSel = selectedIndex === i;
+        {visiblePairs.map(({ idx, text }, displayPos) => {
+          const isSel = selectedIndex === idx;
           return (
             <div
-              key={i}
+              key={idx}
               role="listitem"
-              onClick={() => !disabled && onSelect(i)}
+              onClick={() => !disabled && onSelect(idx)}
               className={cn(
                 "w-full text-left rounded-lg px-3 py-2.5 leading-relaxed transition-colors",
                 "border border-transparent hover:bg-accent/10",
@@ -152,9 +166,9 @@ export default function EvidenceSentencePicker({
               style={{ fontFamily: "'Nunito',sans-serif", fontSize: 15, fontWeight: 600 }}
             >
               <span style={{ color: "#a0a0c0", marginRight: 8, fontFamily: "monospace", fontSize: 12, fontWeight: 700 }}>
-                {i + 1}.
+                {displayPos + 1}.
               </span>
-              <HighlightedSentence text={sentence} vocabMap={vocabMap} />
+              <HighlightedSentence text={text} vocabMap={vocabMap} />
             </div>
           );
         })}

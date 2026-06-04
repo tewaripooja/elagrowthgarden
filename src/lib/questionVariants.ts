@@ -41,9 +41,37 @@ export function characterTraitConceptVariants(q: CharacterTraitQuestionInput): M
   return [{ options: legacy.options, correctIndex: legacy.correctIndex }];
 }
 
+/**
+ * Trim an MCQ slice to at most `max` options, always keeping the correct answer
+ * plus randomly-selected wrong options, then reshuffle.
+ */
+function trimMcqToMax(slice: McqSlice, max = 4): McqSlice {
+  const { options, correctIndex } = slice;
+  if (options.length <= max) return slice;
+
+  const correctOpt = options[correctIndex]!;
+  const wrongs = options.filter((_, i) => i !== correctIndex);
+
+  // Shuffle the wrong options and pick (max - 1) of them
+  const shuffledWrongs = [...wrongs];
+  for (let i = shuffledWrongs.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledWrongs[i], shuffledWrongs[j]] = [shuffledWrongs[j]!, shuffledWrongs[i]!];
+  }
+  const picked = [correctOpt, ...shuffledWrongs.slice(0, max - 1)];
+
+  // Shuffle the final set so the correct answer isn't always first
+  for (let i = picked.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [picked[i], picked[j]] = [picked[j]!, picked[i]!];
+  }
+  const newCorrectIndex = picked.indexOf(correctOpt);
+  return { options: picked, correctIndex: newCorrectIndex };
+}
+
 export function pickInitialMcqPresentation(variants: McqSlice[]): { slice: McqSlice; variantIdx: number } {
   const variantIdx = Math.floor(Math.random() * variants.length);
-  const slice = shuffleMcqOptions(variants[variantIdx]!);
+  const slice = trimMcqToMax(shuffleMcqOptions(variants[variantIdx]!));
   return { slice, variantIdx };
 }
 
@@ -59,7 +87,7 @@ export function pickRetryMcqPresentation(
       variantIdx = Math.floor(Math.random() * variants.length);
     }
   }
-  const slice = shuffleMcqOptions(variants[variantIdx]!);
+  const slice = trimMcqToMax(shuffleMcqOptions(variants[variantIdx]!));
   return { slice, variantIdx };
 }
 
@@ -74,14 +102,24 @@ export function summariesConceptVariants(data: {
   return base;
 }
 
-export function shuffleSummaryOptions(options: SummaryOption[]): SummaryOption[] {
-  const n = options.length;
-  const order = Array.from({ length: n }, (_, i) => i);
-  for (let i = n - 1; i > 0; i--) {
+function fisherYates<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [order[i], order[j]] = [order[j]!, order[i]!];
+    [a[i], a[j]] = [a[j]!, a[i]!];
   }
-  return order.map((i) => options[i]!);
+  return a;
+}
+
+/**
+ * From a set of summary options, pick exactly 1 correct + 2 wrong options,
+ * then shuffle the resulting 3 so the correct one isn't always first.
+ */
+function trimToThree(options: SummaryOption[]): SummaryOption[] {
+  const correct = options.filter(o => o.correct);
+  const wrong   = fisherYates(options.filter(o => !o.correct));
+  const picked  = [...correct.slice(0, 1), ...wrong.slice(0, 2)];
+  return fisherYates(picked);
 }
 
 export function pickInitialSummaryPresentation(sets: SummaryOption[][]): {
@@ -89,7 +127,7 @@ export function pickInitialSummaryPresentation(sets: SummaryOption[][]): {
   displayOptions: SummaryOption[];
 } {
   const variantIdx = Math.floor(Math.random() * sets.length);
-  const displayOptions = shuffleSummaryOptions(sets[variantIdx]!);
+  const displayOptions = trimToThree(sets[variantIdx]!);
   return { variantIdx, displayOptions };
 }
 
@@ -104,6 +142,7 @@ export function pickRetrySummaryPresentation(
       variantIdx = Math.floor(Math.random() * sets.length);
     }
   }
-  const displayOptions = shuffleSummaryOptions(sets[variantIdx]!);
+  // On retry, pick 2 fresh wrong options so the choices feel different
+  const displayOptions = trimToThree(sets[variantIdx]!);
   return { variantIdx, displayOptions };
 }
