@@ -22,7 +22,7 @@ export default function PrivacyPolicy() {
               Privacy Policy
             </h1>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,.85)", fontFamily: font, marginTop: 6, marginBottom: 0 }}>
-              ELA Growth Garden · Effective date: June 9, 2026 · Version 1.0
+              ELA Growth Garden · Effective date: June 9, 2026 · Version 1.1
             </p>
           </div>
 
