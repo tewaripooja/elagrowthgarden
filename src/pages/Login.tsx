@@ -174,6 +174,11 @@ export default function Login() {
             <div style={{ marginTop:8, textAlign:"center" }}>
               <Link to="/signup" style={{ fontSize:12, color:"#aaa", fontFamily:font, textDecoration:"none" }}>← Create an account instead</Link>
             </div>
+            <div style={{ marginTop:8, textAlign:"center" }}>
+              <Link to="/privacy-policy" style={{ fontSize:12, color:"#aaa", fontFamily:font, textDecoration:"none" }}>Privacy Policy</Link>
+              {" · "}
+              <Link to="/delete-account" style={{ fontSize:12, color:"#aaa", fontFamily:font, textDecoration:"none" }}>Delete Account</Link>
+            </div>
           </div>
         </div>
       </div>

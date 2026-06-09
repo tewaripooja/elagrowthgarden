@@ -64,9 +64,9 @@ export const ParentDashboard: React.FC<Props> = ({ onClose }) => {
           {pinSetError && <p className="text-red-500 text-sm mb-3">{pinSetError}</p>}
           <Button
             className="clay-button w-full bg-garden-green text-white font-black"
-            onClick={() => {
+            onClick={async () => {
               if (newPin !== confirmPin) { setPinSetError("PINs don't match."); return; }
-              if (!setPin(newPin)) return;
+              await setPin(newPin);
             }}
           >
             Set PIN & Open Dashboard
@@ -99,14 +99,14 @@ export const ParentDashboard: React.FC<Props> = ({ onClose }) => {
             placeholder="• • • •"
             value={pinInput}
             onChange={e => setPinInput(e.target.value.replace(/\D/g, '').slice(0, 4))}
-            onKeyDown={e => e.key === 'Enter' && verifyPin(pinInput)}
+            onKeyDown={e => { if (e.key === 'Enter') verifyPin(pinInput); }}
             className="mb-3 text-center text-2xl tracking-widest font-black"
             autoFocus
           />
           {pinError && <p className="text-red-500 text-sm mb-3">{pinError}</p>}
           <Button
             className="clay-button w-full bg-garden-green text-white font-black mb-2"
-            onClick={() => verifyPin(pinInput)}
+            onClick={() => { verifyPin(pinInput); }}
           >
             Unlock Dashboard
           </Button>

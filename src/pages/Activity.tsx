@@ -439,11 +439,20 @@ export default function Activity() {
     setSubmittingActivity(activityType);
 
     try {
-      setCompletedActivities((prev) => ({ ...prev, [activityType]: true }));
-
       const totalQ = getQuestionCount(activityType, data);
       const correct = correctCounts[activityType] || 0;
       const perfect = totalQ > 0 && correct === totalQ;
+      const passThreshold = totalQ > 0 && correct / totalQ >= 0.5;
+
+      if (!passThreshold) {
+        toast.error("Not quite ready to battle Frostbite! ❄️", {
+          description: `You got ${correct} out of ${totalQ} correct. Answer at least half correctly to unlock the Frostbite battle. Read carefully and try again!`,
+          duration: 5000,
+        });
+        return;
+      }
+
+      setCompletedActivities((prev) => ({ ...prev, [activityType]: true }));
 
       const keys = expectedQuestionKeys(activityType, data);
       const scoreRows = keys.map((questionKey) => {

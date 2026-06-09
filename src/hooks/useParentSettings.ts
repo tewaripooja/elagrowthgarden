@@ -1,8 +1,7 @@
 // ─────────────────────────────────────────
 // src/hooks/useParentSettings.ts
 // Parent PIN, grade selector, dashboard access.
-// PIN is a simple 4-digit code stored hashed
-// in localStorage + Supabase user metadata.
+// PIN is a 4-digit code hashed with SHA-256 (WebCrypto) before storage.
 // ─────────────────────────────────────────
 
 import { useState, useEffect, useCallback } from 'react';
@@ -11,14 +10,12 @@ import type { ParentSettings, Grade } from '@/types/game';
 
 const SETTINGS_KEY = 'ela_parent_settings';
 
-// Simple hash — not cryptographic, just obfuscation for a kids app PIN
-function hashPin(pin: string): string {
-  let h = 0;
-  for (let i = 0; i < pin.length; i++) {
-    h = ((h << 5) - h) + pin.charCodeAt(i);
-    h |= 0;
-  }
-  return Math.abs(h).toString(36);
+async function hashPin(pin: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 function defaultSettings(): ParentSettings {
@@ -67,21 +64,23 @@ export function useParentSettings() {
 
   // ── PIN management ────────────────────────────────────────────────────────
 
-  /** Set a new 4-digit PIN. Call on first setup. */
-  const setPin = useCallback((pin: string): boolean => {
+  /** Set a new 4-digit PIN. Returns true on success. */
+  const setPin = useCallback(async (pin: string): Promise<boolean> => {
     if (!/^\d{4}$/.test(pin)) {
       setPinError('PIN must be exactly 4 digits.');
       return false;
     }
-    setSettings(prev => ({ ...prev, parentPinHash: hashPin(pin) }));
+    const hash = await hashPin(pin);
+    setSettings(prev => ({ ...prev, parentPinHash: hash }));
     setPinVerified(true);
     setPinError('');
     return true;
   }, [setSettings]);
 
   /** Verify entered PIN against stored hash. Returns true if correct. */
-  const verifyPin = useCallback((pin: string): boolean => {
-    const correct = hashPin(pin) === settings.parentPinHash;
+  const verifyPin = useCallback(async (pin: string): Promise<boolean> => {
+    const hash = await hashPin(pin);
+    const correct = hash === settings.parentPinHash;
     if (correct) {
       setPinVerified(true);
       setPinError('');

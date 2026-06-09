@@ -5,7 +5,7 @@
 // HP bars, projectile animations, and powers.
 // ─────────────────────────────────────────
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { FrostbiteCharacter, FrostbiteMood } from './FrostbiteCharacter';
 import { BattleArena } from './BattleArena';
@@ -61,12 +61,12 @@ export const BossEncounter: React.FC<Props> = ({
   const config = GRADE_CONFIGS[grade];
   const pipHP  = getPipStartHP(grade);
 
-  // Build question pool: story-derived questions first, padded with static fallback.
-  // Pick 5 randomly so every battle feels fresh.
-  const shuffledQuestions = useMemo(() => {
+  // Build question pool on mount — useState initializer runs once per mount,
+  // so every new battle gets a freshly shuffled set.
+  const [shuffledQuestions] = useState(() => {
     const storyQs = storyData ? deriveQuestionsFromStory(storyData) : [];
     return pickBossQuestions(storyQs, BOSS_QUESTIONS[grade], 5);
-  }, [grade, storyData]);
+  });
 
   const [state, setState] = useState<BossEncounterState>({
     phase: 'intro',
