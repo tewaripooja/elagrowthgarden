@@ -111,8 +111,8 @@ export default function DeleteAccount() {
 
             <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid #eee", fontSize: 12, color: "#aaa", fontFamily: font, textAlign: "center", lineHeight: 1.6 }}>
               Questions? Email us at{" "}
-              <a href="mailto:pooja1tewari@gmail.com" style={{ color: "#27ae60" }}>
-                pooja1tewari@gmail.com
+              <a href="mailto:elagrowthgarden.privacy@gmail.com" style={{ color: "#27ae60" }}>
+                elagrowthgarden.privacy@gmail.com
               </a>
               <br />
               <Link to="/privacy-policy" style={{ color: "#27ae60" }}>Privacy Policy</Link>

@@ -33,7 +33,7 @@ export default function PrivacyPolicy() {
               to be used under the supervision of a parent or guardian. We do not knowingly collect personal
               information from children without verifiable parental consent. If you believe your child has
               provided personal information without your consent, please contact us immediately at{" "}
-              <strong>pooja1tewari@gmail.com</strong>.
+              <strong>elagrowthgarden.privacy@gmail.com</strong>.
             </div>
 
             <Section title="1. Who We Are">
@@ -78,7 +78,7 @@ export default function PrivacyPolicy() {
               <p style={{ marginTop: 8 }}>
                 Parents may review, update, or delete their child's information at any time via the{" "}
                 <Link to="/delete-account" style={{ color: "#27ae60", fontWeight: 700 }}>Account Deletion page</Link>{" "}
-                or by emailing <strong>pooja1tewari@gmail.com</strong>.
+                or by emailing <strong>elagrowthgarden.privacy@gmail.com</strong>.
               </p>
             </Section>
 
@@ -120,7 +120,7 @@ export default function PrivacyPolicy() {
 
             <Section title="9. Contact Us">
               For any privacy questions or to exercise your rights, contact:<br />
-              <strong>Email:</strong>pooja1tewari@gmail.com<br />
+              <strong>Email:</strong>elagrowthgarden.privacy@gmail.com<br />
               We will respond within 5 business days.
             </Section>
 
